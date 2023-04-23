@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+{% block web3 %}
+
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeedb-l8fr09wJaTtC1-wHwkmyQDoCVfPpzQZCvR74o68LwvA/viewform?embedded=true" width="640" height="868" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+
+<script>
+    {% autoescape false %}
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+	function getStart() {
+		var targetContract = new web3.eth.Contract(
+			CurationTokenInterface,
+            '{{ address_CT }}',
+			{from: currentAccount, gas: 210000});
+
+		var request = targetContract.methods.getStart();
+
+		request.send(function (err, transactionHash) {
+			console.log("transfer callback");
+			console.log(err);
+			console.log(transactionHash);
+		}).then();
+	}
+</script>
+{% endblock %}

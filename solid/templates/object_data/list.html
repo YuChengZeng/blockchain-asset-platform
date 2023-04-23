@@ -1,0 +1,137 @@
+{% extends "index.html" %}
+{% block body %}
+<div id="main">
+<section>
+    <a href="{{ url_for('object_data.create') }}#GO">
+        <button type="button" class="button small">
+            <i class="fa fa-plus"></i>
+            New Object
+        </button>
+    </a>
+</section>
+<section>
+    <div class="table-wrapper" id="data-table-1_length">
+        <label for="demo-category">Show
+            <select id="demo-category" name="demo-category" aria-controls="" class="" onChange="relocate(this);">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+             entries
+        </label>
+    </div>
+</section>
+<div id="data-table-1_filter" class="table-wrapper">
+    <form action="{{ url_for('object_data.search') }}#GO" method="post">
+        <label>Search:</label>
+        <select id="s_key" name="s_key" aria-controls="data-table-2" >
+            <option value="obj_id">ID</option>
+            <option value="obj_name">Object Name</option>
+            <option value="user_id">Creator</option>
+        </select>
+        <input name="s_value" type="search" placeholder="search for ..." aria-controls="data-table-1" value="{{ misc['s_value'] }}">
+        <button type="submit" class="button small">Go</button>
+        {% if misc['s_value'] %}
+            <a class="col-6 col-12-xsmall" class="button small" href="{{ url_for('object_data.simple_list') }}#GO">Cancel</a>
+        {% endif %}
+    </form>
+</div>
+<section>
+    <table class="major">
+        <thead>
+            <tr>
+                <th class="sorting" id="obj_id" onclick="resort(this)">id</th>
+                <th class="sorting" id="obj_name" onclick="resort(this)">name</th>
+                <th class="sorting" id="user_id" onclick="resort(this)">creator</th>
+                <th class="sorting" id="created" onclick="resort(this)">created time</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for object in objects %}
+        <tr>
+            <td>{{ object.obj_id }}</td>
+            <td>{{ object.obj_name }}</td>
+            <td>{{ object.user_id }}</td>
+            <td>{{ object.created }}</td>
+            <td>
+                <a href="{{ url_for('object_data.view', obj_id=object.obj_id) }}#GO">
+                    <button class="button small"><i class="fa fa-eye"></i></button>
+                </a>
+                <a href="{{ url_for('object_data.update', obj_id=object.obj_id) }}#GO">
+                    <button class="button small"><i class="fa fa-pen"></i></button>
+                </a>
+                <a href="{{ url_for('object_data.delete', obj_id=object.obj_id) }}#GO">
+                    <button class="button small"><i class="fa fa-times"></i></button>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+<div class="dataTables_info" id="data-table-1_info" role="status" aria-live="polite">Showing {{ misc.start }} to {{ misc.end }} of {{ misc.total }} entries</div>
+<div class="dataTables_paginate paging_full_numbers">
+    <a class="button small" href="{{ url_for('object_data.' + action, page=0, items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}#GO">First</a>
+    <a class="button small" href="{{ url_for('object_data.' + action, page=misc['prev'], items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}#GO">Prev</a>
+        <span>
+            {% for page_no in range(misc['paging_from'], misc['paging_to'] + 1) %}
+            <a class="button small" href="{{ url_for('object_data.' + action, page=page_no, items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}#GO">{{ page_no + 1 }}</a>
+            {% endfor %}
+        </span>
+    <a class="button small" href="{{ url_for('object_data.' + action, page=misc['next'], items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}#GO">Next</a>
+    <a class="button small" href="{{ url_for('object_data.' + action, page=misc['last'], items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}#GO">Last</a>
+</div>
+<!-- Matter ends -->
+
+<script>
+//this part is about table sort and relocate
+var page_url = "{{ url_for('object_data.' + action) }}";
+var page_field = "{{misc['sort']}}";
+var page_sort = {{misc['asc']}};
+var page_items = {{misc['items']}};
+var page_page = {{misc['page']}};
+
+function relocate(){
+
+	var item = document.getElementById("demo-category");
+	var item_val=item.options[item.selectedIndex].value;
+	console.log(item_val);
+
+	sort_table(page_url, page_field, page_sort, item_val, page_page);
+}
+
+function resort(element){
+	var target_field = element.id;
+	console.log(target_field);
+	rsort_table(page_url, target_field, page_sort, page_items, page_page);
+}
+
+$(document).ready(function(){
+    console.log('document ready');
+
+	//change field class in thead
+	sort_table_style(page_field,page_sort);
+
+	//change pageitem selector to {{misc['items']}}
+	var item = document.getElementById("demo-category");
+	for(var i=0 ; i<item.options.length ; i++) {
+		if(item.options[i].value == page_items) {
+			item.selectedIndex = i;
+			break;
+		}
+	}
+
+	//change search selector to {{misc['s_key']}}
+	var item = document.getElementById("s_key");
+	for(var i=0 ; i<item.options.length ; i++) {
+		if(item.options[i].value == "{{ misc['s_key'] }}") {
+			item.selectedIndex = i;
+			break;
+		}
+	}
+
+});
+</script>
+</div>
+{% endblock %}

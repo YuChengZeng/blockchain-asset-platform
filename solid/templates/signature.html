@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% include "head.html" %}
+</head>
+<body class="bg-primary">
+<div id="layoutAuthentication">
+            <div id="layoutAuthentication_content">
+                <main>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-5">
+                                <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                    <div class="card-header"><h3 class="text-center font-weight-light my-4">Login</h3></div>
+                                    <div class="card-body">
+                                        <form id="activate_form" action="{{ url_for('web3_login') }}" method="post">
+											<label for="address"></label>
+                                            <div class="form-floating mb-3">
+                                                <input class="form-control" id="address" name="address" type="email" placeholder="name@example.com" readonly="readonly">
+                                                <label for="address">Address</label>
+                                            </div>
+                                            <div class="form-floating mb-3">
+                                                <input class="form-control" id="signature" name="signature" type="password" placeholder="Password" readonly="readonly">
+                                                <label for="signature">Signature</label>
+												<input type="hidden" id="msg" name="msg" value="{{ msg }}">
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                                <a class="small" href="https://metamask.io/">尚未擁有MetaMask錢包?</a>
+                                                <a class="btn btn-primary" onclick="sign()">Activate</a>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="card-footer text-center py-3">
+                                        <div class="small"><a href="register.html">已擁有MetaMask錢包！註冊！</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+<script>
+    var currentAccount = '';
+    window.addEventListener('load', async () => {
+        // Modern dapp browsers...
+        if (window.ethereum) {
+            console.log('echo');
+            window.ethereum.on('accountsChanged', (accounts) => {
+                console.log(accounts);
+                currentAccount = window.web3.utils.toChecksumAddress(accounts[0]);
+                document.getElementById("skychain_account").innerHTML = 'MetaMask Address: ' + currentAccount;
+            });
+            window.web3 = new Web3(ethereum);
+            try {
+                // Request account access if needed
+                await ethereum.enable();
+                // Acccounts now exposed
+                //web3.eth.sendTransaction({/* ... */});
+            } catch (error) {
+                // User denied account access...
+                console.log(error);
+            }
+        }
+        // Legacy dapp browsers...
+        else if (window.web3) {
+            window.web3 = new Web3(web3.currentProvider);
+            console.log('mark');
+            // Acccounts always exposed
+            //web3.eth.sendTransaction({/* ... */});
+        }
+        // Non-dapp browsers...
+        else {
+            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+        }
+
+        window.web3.eth.getAccounts().then(function (data) {
+            console.log(data);
+            currentAccount = window.web3.utils.toChecksumAddress(data[0]);
+            // document.getElementById("skychain_account").innerHTML = 'MetaMask Address: ' + currentAccount;
+            $("#address").val(currentAccount);
+            sign();
+        });
+    });
+
+    function sign() {
+        console.log('sign');
+        // $("#msg").val(Math.floor(Date.now()/1000).toString());
+        web3.eth.personal.sign(
+            $("#msg").val(),
+            currentAccount,
+            "",
+            function (err, result) {
+                console.log("sign");
+                if (err) {
+                    alert("簽章執行失敗");
+                    throw false;
+                } else {
+                    $("#signature").val(result);
+                    $("#activate_form").submit();
+                }
+            }).then(function (signature) {
+            web3.eth.personal.ecRecover(
+                $("#msg").val(),
+                signature,
+                function (err, result) {
+                    console.log("ecRecover");
+                    console.log(result);
+                });
+        });
+    }
+
+    $(document).ready(function () {
+        setTimeout(function () {
+            {% with messages = get_flashed_messages(with_categories=True) %}
+                {% if messages %}
+                    {% for message in messages %}
+                        noty({
+                            text: '{{ message[1] }}',
+                            layout: 'topRight',
+                            type: '{{ message[0] }}',
+                            timeout: 15000
+                        });
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        }, 1000);
+    });
+
+</script>
+</html>

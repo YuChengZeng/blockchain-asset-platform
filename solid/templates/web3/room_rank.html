@@ -1,0 +1,96 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">熱門展間列表</h1>
+	<div class="container">
+		<div class="card-body">
+			<table id="myTable" class="display">
+				<thead>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">room_id</th>
+						<th>title</th>
+						<th>introduction</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tfoot>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">room_id</th>
+						<th>title</th>
+						<th>introduction</th>
+						<th></th>
+					</tr>
+				</tfoot>
+				<tbody>
+					{% for ticket in ticket_rank %}
+					<tr>
+						<td>{{ ticket[3] }}</td>
+						<td style="display: none">{{ ticket[0] }}</td>
+						<td>{{ ticket[1] }}</td>
+						<td>{{ ticket[2] }}</td>
+						<td>
+							<form action="{{ url_for('web3.add_to_collect') }}" method="post">
+								<input type="hidden" id="collect_type" name="collect_type" value="r">
+								<input type="hidden" id="collect_Id" name="collect_Id" value="{{ ticket[0] }}">
+								<button class="btn btn-outline-primary" type="submit">收藏</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<script>
+    let table = new DataTable('#myTable', {
+        order: [[0, 'desc']]
+	});
+	{% autoescape false %}
+	// var TicketsInterface = {{ TT_abi }};
+	// var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+    function checkTicket(roomId, roomPrice) {
+  		fetch('/visitor/check_ticket/' + roomId)
+			.then(response => response.text())
+			.then(data => {
+			  if (data === '1') {
+				alert('您已購票，進入展間！');
+                toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/exhibition?id='+roomId+'&room=1');
+			  } else {
+				alert('您尚未購票，請購票！');
+                approve(roomPrice);
+                buyTicket(roomId);
+			  }
+			})
+			// .catch(error => {
+			//   console.error('驗票發生錯誤：', error);
+			// });
+		}
+
+	function approve(amount) {
+		var targetContract = new web3.eth.Contract(
+            CurationTokenInterface,
+            '{{ address_CT }}',
+            {from: currentAccount});
+        targetContract.methods.approve('{{ address_TT }}', amount).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+
+	function buyTicket(room_id) {
+		var targetContract = new web3.eth.Contract(
+            TicketsInterface,
+            '{{ address_TT }}',
+            {from: currentAccount, gas: 210000});
+		targetContract.methods.buyTicket(room_id).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+</script>
+{% endblock %}

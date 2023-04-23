@@ -1,0 +1,105 @@
+{% extends "index.html" %}
+
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">資產管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">鑄造NFT及上傳數位資產</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.upload') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-primary text-white mb-4">
+				<div class="card-body">NFT編輯及上架 / 資產內容編輯</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.asset_list') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品下架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.launched_assets') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">資產詳細資料</div>
+		<div class="card-body">
+			<form action="" id="form" enctype=multipart/form-data method="post">
+				<div class="col mb-3 d-flex justify-content-between">
+					<div class="col mb-3 col-md-6">
+						<div class="form-floating mb-3">
+            <textarea class="form-control" rows="1" id="title" name="title"
+					  placeholder="請輸入資產標題">{{ target[1] }}</textarea>
+							<label for="title">資產標題</label>
+						</div>
+						<div class="form-floating mb-3">
+            <textarea class="form-control" rows="1" id="creator" name="creator"
+					  placeholder="請輸入創建者">{{ target[2] }}</textarea>
+							<label for="creator">創建者</label>
+						</div>
+						<div class="form-floating mb-3">
+							<select class="form-control" id="subject" name="subject" required>
+								<option style="display: none" value="{{ target[4] }}">{{ target[4] }}</option>
+								<option value="美食">美食</option>
+								<option value="環境">環境</option>
+								<option value="交通">交通</option>
+								<option value="遊戲">遊戲</option>
+								<option value="新聞">新聞</option>
+								<option value="歷史">歷史</option>
+								<option value="人物">人物</option>
+							</select>
+							<label for="subject">主題</label>
+						</div>
+						<div class="form-floating mb-3">
+            <textarea class="form-control" rows="5" id="description" name="description"
+					  placeholder="請輸入資產相關描述">{{ target[3] }}</textarea>
+							<label for="description">資產相關描述</label>
+						</div>
+						<button type="submit" id="buttonMint" class="btn btn-primary" onclick="">
+							更新資訊
+						</button>
+					</div>
+					<div class="col mb-3">
+						<div class="card-body">
+							<img class="card-img-top"
+								 src={{ img }}>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!--<script src="FixERC20Interface.js"></script>-->
+<!--<script src="misc.js"></script>-->
+<script src="{{ url_for('static', filename='js/sha256.js') }}"></script> <!-- jQuery -->
+<script src="{{ url_for('static', filename='js/base64.js') }}"></script> <!-- jQuery -->
+<script>
+    {% autoescape false %}
+    // var NftInterface = {{ abi }};
+    {% endautoescape %}
+
+
+    String.prototype.hexEncode = function () {
+        var hex, i;
+        var result = "";
+        for (i = 0; i < this.length; i++) {
+            hex = this.charCodeAt(i).toString(16);
+            result += ("000" + hex).slice(-4);
+        }
+        return result
+    }
+
+    String.prototype.hexDecode = function () {
+        var j;
+        var hexes = this.match(/.{1,4}/g) || [];
+        var back = "";
+        for (j = 0; j < hexes.length; j++) {
+            back += String.fromCharCode(parseInt(hexes[j], 16));
+        }
+        return back;
+    }
+</script>
+{% endblock %}

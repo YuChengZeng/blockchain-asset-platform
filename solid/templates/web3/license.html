@@ -1,0 +1,64 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">策展管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品列表</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.commodities') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間門票</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.show_room') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間編輯</div>
+				<a class="small text-white stretched-link" href="#" onclick="toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/vendor')"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-success text-white mb-4">
+				<div class="card-body">已取得授權</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.license') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">授權列表
+			<form action="{{ url_for('curation.license') }}" method="post" style="float: right;">
+				<label></label>
+					<select class="dataTable-selector" id="s_key" name="s_key" aria-controls="data-table-2" >
+						<option value="">排序：</option>
+						<option value="exp">到期日</option>
+					</select>
+				<button type="submit" class="btn btn-outline-primary">Go</button>
+			</form>
+		</div>
+		<div class="card-body">
+			<div class="row">
+			{% for license_detail in license_detail_list %}
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-light text-black mb-4">
+					<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+						{{ license_detail[0] }}
+					</div>
+					<div class="card-body">
+						<img class="card-img-top"
+							 src="{{ license_detail[2] }}">
+					</div>
+					<div class="card-footer d-flex align-items-center justify-content-evenly">
+						到期日：{{ license_detail[1] }}
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">策展管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品列表</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.commodities') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-success text-white mb-4">
+				<div class="card-body">展間門票</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.show_room') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間編輯</div>
+				<a class="small text-white stretched-link" href="#" onclick="toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/vendor')"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">已取得授權</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.license') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">門票設定</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-6">
+					<table id="room-table" class="table-secondary dataTable-table">
+						<thead>
+							<tr>
+								<th>展間標題</th>
+								<th style="display: none">ID</th>
+								<th>Prise</th>
+								<th style="width: 75px">Set</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for room in rooms %}
+							<tr>
+								<td>{{ room.title }}</td>
+								<td style="display: none">{{ room._id }}</td>
+								<td>{{ room.price if room.price else "未設定" }}</td>
+								<td><button class="btn btn-primary choose-btn">選擇</button></td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				<div class="col-md-6">
+					<form enctype=multipart/form-data>
+						<div class="row mb-3 d-flex justify-content-between my-3">
+							<div class="">
+								展間名稱<input class="form-control" type="text" id="roomTitle" placeholder="{{ asset_title }}"
+											   readonly="readonly">
+							</div>
+							<div class="">
+								<input style="display: none" class="form-control" type="text" id="roomId" placeholder="{{ token_id }}"
+												  readonly="readonly">
+							</div>
+							<div class="">
+								票價：
+								<select class="form-control" id="roomPrice">
+									<option style="display: none" value="0">選擇金額</option>
+									<option value="10">10 CT</option>
+									<option value="50">50 CT</option>
+									<option value="100">100 CT</option>
+									<option value="150">150 CT</option>
+									<option value="200">200 CT</option>
+									<option value="250">250 CT</option>
+									<option value="300">300 CT</option>
+								</select>
+							</div>
+							<div class="col-md-6 d-flex justify-content-end my-3">
+							</div>
+							<div class="col-md-6 d-flex justify-content-end my-3">
+								<button class="btn btn-primary" type="button" onclick="checkForm()">上架</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	{% autoescape false %}
+	var TicketsInterface = {{ TT_abi }};
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+	function checkForm() {
+		// 取得表單中所有的input元素
+		var select = document.getElementsByTagName("select");
+		var input = document.getElementsByTagName("input");
+		// 檢查每個input元素是否都有值
+		for (var i = 0; i < input.length; i++) {
+			if (input[i].value === "") {
+				alert("請選擇展間");
+				return false;
+			}
+		}
+        setRoomAndPrice();
+		return true;
+	}
+
+	const chooseButtons = document.querySelectorAll('.choose-btn');
+	chooseButtons.forEach(button => {
+		button.addEventListener('click', function() {
+			const row = this.parentNode.parentNode; // 取得所在行
+			const title = row.querySelector('td:first-child').textContent; // 取得Title
+			const id = row.querySelector('td:nth-child(2)').textContent; // 取得ID
+			document.getElementById('roomTitle').value = title; // 將Title填入表單欄位
+			document.getElementById('roomId').value = id; // 將ID填入表單欄位
+		});
+	});
+
+    function setRoomAndPrice() {
+        var roomId = document.getElementById("roomId").value;
+        var price = document.getElementById("roomPrice").value
+		if (price == 0) {
+            alert('請設定票價')
+            return;
+		}
+        var targetContract = new web3.eth.Contract(
+            TicketsInterface,
+            '{{ address_TT }}',
+            {from: currentAccount, gas: 210000});
+        var request = targetContract.methods.setRoom(roomId);
+        request.send(function (err, transactionHash) {
+            console.log("transfer callback");
+            console.log(err);
+            console.log(transactionHash);
+        }).then();
+        var request = targetContract.methods.setPrice(roomId, price);
+        request.send(function (err, transactionHash) {
+            console.log("transfer callback");
+            console.log(err);
+            console.log(transactionHash);
+        }).then();
+    }
+</script>
+{% endblock %}

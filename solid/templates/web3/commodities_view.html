@@ -1,0 +1,105 @@
+{% extends "index.html" %}
+
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">策展管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-3">
+			<div class="card bg-success text-white mb-4">
+				<div class="card-body">商品列表 / 商品資訊</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.commodities') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間門票</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.show_room') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間編輯</div>
+				<a class="small text-white stretched-link" href="#" onclick="toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/vendor')"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">已取得授權</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.license') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">商品描述</div>
+		<div class="card-body">
+			<form action="" id="form" enctype=multipart/form-data>
+				<div class="col mb-3 d-flex justify-content-between">
+					<div class="col mb-3 col-md-6">
+						<div class="form-floating mb-3">
+							<textarea class="form-control" rows="1" id="title" name="title"
+								placeholder="請輸入資產標題" readonly="readonly">{{ target.title }}</textarea>
+							<label for="title">資產標題</label>
+						</div>
+						<div class="form-floating mb-3">
+							<textarea class="form-control" rows="1" id="creator" name="creator"
+								placeholder="請輸入創建者" readonly="readonly">{{ target.creator}}</textarea>
+							<label for="creator">創建者</label>
+						</div>
+						<div class="form-floating mb-3">
+							<textarea class="form-control" rows="1" id="subject" name="subject"
+								placeholder="主題" readonly="readonly">{{ target.subject }}</textarea>
+							<label for="creator">主題</label>
+						</div>
+						<div class="form-floating mb-3">
+							<textarea class="form-control" rows="5" id="description" name="description"
+								placeholder="請輸入資產相關描述" readonly="readonly">{{ target.description }}</textarea>
+							<label for="description">資產相關描述</label>
+						</div>
+						<div class="card bg-secondary text-white mb-3">
+							<div class="card-body">
+								{{day}}天 {{target.price}} CT
+								<a type="button" class="btn btn-primary choose-btn"style="float: right;"
+									onclick="approve({{ target.price }}); application({{ target.launch_id }})">租用</a>
+							</div>
+						</div>
+					</div>
+					<div class="col mb-3">
+						<div class="card-body">
+							<img id="image" class="card-img-top"
+								 src="{{ target.img }}">
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+	{% autoescape false %}
+	var AssetRentalInterface = {{ ART_abi }};
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+	function approve(amount) {
+		var targetContract = new web3.eth.Contract(
+            CurationTokenInterface,
+            '{{ address_CT }}',
+            {from: currentAccount});
+        targetContract.methods.approve('{{ address_ART }}', amount).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+
+    function application(launch_id) {
+        var targetContract = new web3.eth.Contract(
+            AssetRentalInterface,
+            '{{ address_ART }}',
+            {from: currentAccount, gas: 210000});
+		targetContract.methods.application(launch_id).send()
+            .then(function (result) {
+                console.log(result);
+            });
+    }
+</script>
+{% endblock %}

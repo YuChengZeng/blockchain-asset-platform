@@ -1,0 +1,77 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">資產管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">鑄造NFT及上傳數位資產</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.upload') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-primary text-white mb-4">
+				<div class="card-body">NFT編輯及上架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.asset_list') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品下架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.launched_assets') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">NFT列表
+			<form action="{{ url_for('asset.search') }}" method="post" style="float: right;">
+				<label></label>
+					<select class="dataTable-selector" id="s_key" name="s_key" aria-controls="data-table-2" >
+						<option value="">搜尋：</option>
+						<option value="title">標題</option>
+<!--						<option value="creator">創建者</option>-->
+						<option value="subject">主題</option>
+						<option value="description">描述</option>
+					</select>
+				<input class="input" name="s_value" type="search" placeholder="search for ..." aria-controls="data-table-1" value="">
+				<button type="submit" class="btn btn-outline-primary">Go</button>
+			</form>
+		</div>
+		<div class="card-body">
+			<div class="row">
+			{% for asset_detail in asset_detail_list %}
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-light text-black mb-4">
+					<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+						<div>
+							{{ asset_detail[1] }}
+						</div>
+					</div>
+					<div class="card-body">
+						<img class="card-img-top"
+							 src="{{ asset_detail[5] }}">
+					</div>
+					<div class="card-footer d-flex align-items-center justify-content-evenly">
+						<a class="btn btn-primary"
+						   href="{{ url_for('asset.asset_view', transactionHash=asset_detail[4]) }}">編輯</a>
+						<a class="btn btn-primary"
+						   href="{{ url_for('asset.launch', asset_title=asset_detail[1], token_id=asset_detail[0]) }}">上架</a>
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	// $(document).ready(function() {
+	//   // 發送 GET 請求獲取圖片網址
+	//   $.get("http://blockchain-omekas.ccstw.nccu.edu.tw:7845/filter/source", function(response) {
+	//     // 將網址設定為 img 標籤的 src 屬性
+	//     $("img").attr("src", response);
+	//   });
+	// });
+</script>
+{% endblock %}

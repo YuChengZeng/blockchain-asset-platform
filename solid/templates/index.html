@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% include "head.html" %}
+</head>
+<body class="sb-nav-fixed bg-gray" style="background-color: rgb(211, 211, 211)">
+<nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+	<!-- Navbar Brand-->
+	<a class="navbar-brand ps-3" href="{{ url_for('show_entries') }}">數位資產租借平台</a>
+	<!-- Navbar-->
+	<ul class="nav nav-tabs flex-fill">
+		<li class="nav-item flex-fill">
+			<a class="nav-link" style="color: white;" href="/">首頁</a>
+		</li>
+		<li class="nav-item flex-fill">
+			<a class="nav-link" style="color: white;" href="/asset/upload">資產管理模組</a>
+		</li>
+		<li class="nav-item flex-fill">
+			<a class="nav-link" style="color: white;" href="/curation/commodities">策展管理模組</a>
+		</li>
+		<li class="nav-item flex-fill">
+			<a class="nav-link" style="color: white;" href="/visitor/room_list">觀展模組</a>
+		</li>
+		<li class="nav-item dropdown flex-grow-1">
+			<a class="nav-link dropdown-toggle" id="navbarDropdown" style="color: white;" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
+			<ul class="dropdown-menu dropdown-menu-end " aria-labelledby="navbarDropdown">
+				<p><a class="dropdown-item" href="/web3/withdraw">個人資訊</a></p>
+				<li><hr class="dropdown-divider"/></li>
+				<p type="button" onclick="logoutPi()"><a class="dropdown-item" href="/logout">Logout</a></p>
+			</ul>
+		</li>
+	</ul>
+</nav>
+<div id="layoutSidenav">
+	<div id="layoutSidenav_nav">
+		<nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+			<div class="sb-sidenav-menu">
+				<div class="nav">
+					<button id="toggleButton" class="btn-lg btn-secondary" type="button" onclick="toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/vendor')">Party Island</button>
+					<div class="sb-sidenav-menu-heading">功能選擇</div>
+					<a class="nav-link" href="/web3/instruction">
+						<div class="sb-nav-link-icon"></div>
+						問題回報表單
+					</a>
+					<a class="nav-link" href="{{ url_for('web3.commodities_rank') }}">
+						<div class="sb-nav-link-icon"></div>
+						熱門商品列表
+					</a>
+					<a class="nav-link" href="{{ url_for('web3.room_rank') }}">
+						<div class="sb-nav-link-icon"></div>
+						熱門展間列表
+					</a>
+					<a class="nav-link" href="{{ url_for('web3.collection') }}">
+						<div class="sb-nav-link-icon"></div>
+						我的收藏
+					</a>
+				</div>
+			</div>
+			<div class="sb-sidenav-footer">
+				<div class="kbd">Logged in as address:
+					<input class="form-control" type="text" id="addresslogin" name="address"
+						   placeholder="請先登入MetaMask" readonly="readonly">
+				</div>
+			</div>
+		</nav>
+	</div>
+	<div id="layoutSidenav_content">
+		<main>
+			<div id="block">
+				{% block body %} {% endblock %}
+				{% block web3 %} {% endblock %}
+			</div>
+			<div id="partyIsland" style="display: none;">
+				<iframe id="myIframe" src="https://dev-partyisland.dlll.nccu.edu.tw/vendor" style="position: absolute; bottom: 0; right: 0; width: 86%; height: 100%;"></iframe>
+			</div>
+		</main>
+	</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+		crossorigin="anonymous"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>-->
+<!--<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>-->
+<script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+<!--<script src="{{ url_for('static', filename='js/chart-area-demo.js') }}"></script>-->
+<!--<script src="{{ url_for('static', filename='js/chart-bar-demo.js') }}"></script>-->
+<!--<script src="{{ url_for('static', filename='js/datatables-simple-demo.js') }}"></script>-->
+<!--</body>-->
+</html>
+<script>
+    //var web3 = new Web3(Web3.givenProvider);
+    var currentAccount = '';
+
+    window.addEventListener('load', async () => {
+        // Modern dapp browsers...
+        if (window.ethereum) {
+            window.web3 = new Web3(ethereum);
+            try {
+                // Request account access if needed
+                await ethereum.enable();
+                // Acccounts now exposed
+                //web3.eth.sendTransaction({/* ... */});
+            } catch (error) {
+                // User denied account access...
+            }
+        }
+        // Legacy dapp browsers...
+        else if (window.web3) {
+            window.web3 = new Web3(web3.currentProvider);
+            // Acccounts always exposed
+            //web3.eth.sendTransaction({/* ... */});
+        }
+        // Non-dapp browsers...
+        else {
+            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+        }
+
+        window.web3.eth.getAccounts().then(function (data) {
+            console.log(data);
+            currentAccount = data[0];
+			$("#addresslogin").val(currentAccount);
+		});
+
+        {#切換錢包自動登出#重新整理#}
+        if (window.ethereum.on('accountsChanged', (accounts) => {
+            console.log(accounts)
+			// window.location.reload();
+            window.location.href = "{{ url_for('logout') }}"
+        })) ;
+
+        if (window.ethereum.on('chainChanged', (chainId) => {
+            window.location.href = "{{ url_for('logout') }}"
+        })) ;
+    });
+
+	function toggleDivs(piURL) {
+		var block = document.getElementById("block");
+		var partyIsland = document.getElementById("partyIsland");
+        var iframe = document.getElementById("myIframe");
+        var toggleButton = document.getElementById("toggleButton")
+
+		if (block.style.display === "none") {
+			block.style.display = "block";
+			partyIsland.style.display = "none";
+            iframe.src = piURL;
+            toggleButton.classList.add("btn-secondary")
+			toggleButton.classList.remove("btn-success");
+		} else {
+			block.style.display = "none";
+			partyIsland.style.display = "block";
+            iframe.src = piURL;
+			toggleButton.classList.add("btn-success")
+			toggleButton.classList.remove("btn-secondary");
+		}
+	}
+
+	function logoutPi() {
+        const myIframe = document.getElementById('myIframe');
+        myIframe.contentWindow.postMessage('logout', '*');
+        console.log('msg sent')
+		window.location.reload();
+		// document.getElementById('myIframe').contentWindow.headerLogout();
+    }
+</script>

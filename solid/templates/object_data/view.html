@@ -1,0 +1,60 @@
+{% extends "index.html" %}
+{% block body %}
+<div id="main">
+<!-- Matter -->
+<div class="matter">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-7">
+				<div class="widget">
+					<!-- Widget title -->
+					<div class="widget-head">
+						<div class="pull-left">Object Information</div>
+						<div class="clearfix"></div>
+					</div>
+					<div class="widget-content">
+						<!-- Widget content -->
+
+						<div class="table-responsive">
+							<table class="table table-striped table-bordered table-hover">
+								<tbody>
+								<tr>
+									<td>obj_id</td>
+									<td>{{ object.obj_id }}</td>
+								</tr>
+								<tr>
+									<td>obj_name</td>
+									<td>{{ object.obj_name }}</td>
+								</tr>
+								<tr>
+									<td>user_id</td>
+									<td>{{ object.user_id }}</td>
+								</tr>
+								<tr>
+									<td>created</td>
+									<td>{{ object.created }}</td>
+								</tr>
+								<tr>
+									<td>Control</td>
+									<td>
+										<a href="{{ url_for('object_data.update', obj_id=object.obj_id) }}#GO">
+											<button class="btn btn-xs btn-warning"><i class="fa fa-pen"></i></button>
+										</a>
+										<a href="{{ url_for('object_data.delete', obj_id=object.obj_id) }}#GO">
+											<button class="btn btn-xs btn-danger"><i class="fa fa-times"></i></button>
+										</a>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="widget-foot"></div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+{% endblock %}

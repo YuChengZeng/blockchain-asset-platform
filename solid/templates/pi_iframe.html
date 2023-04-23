@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>數位資產租借平台</title>
+	<style>
+	  /* CSS動畫 */
+	  .loader {
+		border: 16px solid #f3f3f3;
+		border-top: 16px solid #3498db;
+		border-radius: 50%;
+		width: 120px;
+		height: 120px;
+		animation: spin 2s linear infinite;
+		position: absolute;
+		top: 250px;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 9999;
+	  }
+
+	  @keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	  }
+	</style>
+</head>
+<body class="sb-nav-fixed bg-gray">
+	<main>
+		<div style="border: none;" id="partyIsland">
+			<iframe id="myIframe" src="https://dev-partyisland.dlll.nccu.edu.tw/landing" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100%; height: 100%;"></iframe>
+		</div>
+	</main>
+	<style>
+	  /* CSS動畫 */
+	  .loader {
+		border: 16px solid #f3f3f3;
+		border-top: 16px solid #3498db;
+		border-radius: 50%;
+		width: 120px;
+		height: 120px;
+		animation: spin 2s linear infinite;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 9999;
+	  }
+
+	  @keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	  }
+	</style>
+	<script>
+		window.addEventListener("message", function(event) {
+			// if (event.origin !== "*") return; // 如果消息不來自預期的域名，則忽略消息
+			console.log("Received message from " + event.origin + ": " + event.data);
+			if (event.data === "reload") {
+				var myIframe = document.getElementById("myIframe");
+    			myIframe.style.display = "none";
+                // 添加載入中動畫
+			  	var loader = document.createElement("div");
+			  	loader.classList.add("loader");
+			  	document.body.appendChild(loader);
+				// 延遲三秒後重新加載頁面
+				setTimeout(function() {
+					window.location.reload(); // 重新加載頁面
+				}, 3000); // 3000代表3秒，以毫秒為單位計算
+			}
+		}, false);
+	</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">資產管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">鑄造NFT及上傳數位資產</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.upload') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-primary text-white mb-4">
+				<div class="card-body">NFT編輯及上架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.asset_list') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品下架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.launched_assets') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="card mb-4">
+		<div class="card-header">上架資訊</div>
+		<div class="card-body">
+			<form enctype=multipart/form-data>
+				<div class="row mb-3">
+					<div class="">
+						資產標題<input class="form-control" type="text" id="asset_title" placeholder="{{ asset_title }}"
+									   readonly="readonly">
+					</div>
+					<div class="">
+						資產NFT編號<input class="form-control" type="text" id="token_id" placeholder="{{ token_id }}"
+										  readonly="readonly">
+					</div>
+					<div class="">
+						租借天數：
+						<select class="form-control" id="rent_days">
+							<option style="display: none" value="">選擇天數</option>
+							<option value="1">1 天</option>
+							<option value="5">5 天</option>
+							<option value="10">10 天</option>
+							<option value="15">15 天</option>
+							<option value="20">20 天</option>
+							<option value="25">25 天</option>
+							<option value="30">30 天</option>
+						</select>
+					</div>
+					<div class="">
+						租金：
+						<select class="form-control" id="price">
+							<option style="display: none" value="">選擇金額</option>
+							<option value="10">10 CT</option>
+							<option value="50">50 CT</option>
+							<option value="100">100 CT</option>
+							<option value="150">150 CT</option>
+							<option value="200">200 CT</option>
+							<option value="250">250 CT</option>
+							<option value="300">300 CT</option>
+						</select>
+					</div>
+					<div style="margin-bottom: 10px;"></div>
+					<div class="col-md-6">
+						<button class="btn btn-primary" type="button" onclick="checkForm()">上架</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+    {% autoescape false %}
+    var AssetRentalInterface = {{ ART_abi }};
+    {% endautoescape %}
+
+	function checkForm() {
+		// 取得表單中所有的input元素
+		var inputs = document.getElementsByTagName("select");
+		// 檢查每個input元素是否都有值
+		for (var i = 0; i < inputs.length; i++) {
+			if (inputs[i].value === "") {
+				alert("請設定租借天數和價錢");
+				return false;
+			}
+		}
+        launch();
+		return true;
+	}
+
+
+    function launch() {
+        var targetContract = new web3.eth.Contract(
+            AssetRentalInterface,
+            '{{ address_ART }}',
+            {from: currentAccount, gas: 210000});
+
+        var request = targetContract.methods.launch(
+            {{ token_id }},
+        	parseInt(document.getElementById("rent_days").value),
+            parseInt(document.getElementById("price").value));
+
+        request.send(function (err, transactionHash) {
+            console.log("transfer callback");
+            console.log(err);
+            console.log(transactionHash);
+        }).then();
+    }
+</script>
+{% endblock %}

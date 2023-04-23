@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {% include "head.html" %}
+    </head>
+    <body class="bg-primary">
+        <div id="layoutAuthentication">
+            <div id="layoutAuthentication_content">
+                <main>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-5">
+                                <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                    <div class="card-header"><h4 class="text-center font-weight-light my-4">連結錢包</h4></div>
+                                    <div class="card-body">
+                                        <form id="formLogin" onsubmit="return checkForm()">
+                                            <div class="form-floating mb-3">
+                                                <input class="form-control element1" id="account" name="account" value="{{ user.account }}" readonly="readonly">
+                                                <label for="account">Account</label>
+                                            </div>
+                                            <div class="form-floating mb-3">
+                                                <input class="form-control element1" id="nickname" name="nickname" value="{{ user.nickname }}" readonly="readonly">
+                                                <label for="nickname">Nick Name</label>
+                                            </div>
+                                            <div class="form-floating mb-3">
+                                                <input class="form-control element2" type="text" id="address" name="address" readonly="readonly">
+                                                <label for="address">MetaMask Address</label>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                                <button id="buttonLogin" type="submit" class="btn btn-primary"
+                                                formaction="{{ url_for('login') }}" formmethod="post">確認</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="card-footer text-center py-3">
+                                        <div class="small"><a class="small" href="https://metamask.io/" target="_blank">尚未擁有MetaMask錢包?</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/web3.js.1.x/dist/web3.min.js') }}"></script> <!-- web3 -->
+    <script>
+    var currentAccount = '';
+
+    window.addEventListener('load', async () => {
+        // Modern dapp browsers...
+        if (window.ethereum) {
+            window.web3 = new Web3(ethereum);
+            try {
+                // Request account access if needed
+                await ethereum.enable();
+                // Acccounts now exposed
+                //web3.eth.sendTransaction({/* ... */});
+            } catch (error) {
+                // User denied account access...
+            }
+        }
+        // Legacy dapp browsers...
+        else if (window.web3) {
+            window.web3 = new Web3(web3.currentProvider);
+            // Acccounts always exposed
+            //web3.eth.sendTransaction({/* ... */});
+        }
+        // Non-dapp browsers...
+        else {
+            console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+        }
+
+        window.web3.eth.getAccounts().then(function (data) {
+            console.log(data);
+            currentAccount = data[0];
+			$("#address").val(currentAccount);
+		});
+
+        {#切換錢包自動登出#重新整理#}
+        if (window.ethereum.on('accountsChanged', (accounts) => {
+            console.log(accounts)
+			// window.location.reload();
+            window.location.href = "{{ url_for('logout') }}"
+        })) ;
+
+        if (window.ethereum.on('chainChanged', (chainId) => {
+            window.location.href = "{{ url_for('logout') }}"
+        })) ;
+    });
+
+    function checkForm() {
+		// 取得表單中所有的input元素
+		var account = document.getElementsByName("account")[0];
+        var nickname = document.getElementsByName("nickname")[0];
+        var address = document.getElementsByName("address")[0];
+        console.log(account);
+        console.log(address);
+		// 檢查每個input元素是否都有值
+        if (account.value && nickname.value === "") {
+          alert("請重新登入Party Island");
+          return false;
+        }
+        if (address.value === "") {
+          alert("請解鎖錢包");
+          return false;
+        }
+        else return true;
+	}
+
+    </script>
+    </body>
+</html>

@@ -1,0 +1,211 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">資產管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-4">
+			<div class="card bg-primary text-white mb-4">
+				<div class="card-body">鑄造NFT及上傳數位資產</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.upload') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">NFT編輯及上架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.asset_list') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-4">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">商品下架</div>
+				<a class="small text-white stretched-link" href="{{ url_for('asset.launched_assets') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">資產描述</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-6">
+					<form onsubmit="return checkForm()" id="formLeft" enctype=multipart/form-data>
+					<!-- 左半邊的內容 -->
+						<div class="form-floating mb-3">
+						<input class="form-control" type="text" id="title" name="title"
+							   placeholder="請輸入資產標題" required>
+						<label for="title">請輸入資產標題</label>
+						</div>
+						<div class="form-floating mb-3">
+							<input class="form-control" type="text" id="creator" name="creator" placeholder="請輸入創建者" value="{{creator}}" required>
+							<label for="creator">請輸入創建者</label>
+						</div>
+						<div class="form-floating mb-3">
+							<select class="form-control" id="subject" name="subject" required>
+								<option value="">請選擇主題</option>
+								<option value="美食">美食</option>
+								<option value="環境">環境</option>
+								<option value="交通">交通</option>
+								<option value="遊戲">遊戲</option>
+								<option value="新聞">新聞</option>
+								<option value="歷史">歷史</option>
+								<option value="人物">人物</option>
+							</select>
+							<label for="subject">請選擇主題</label>
+						</div>
+						<div class="form-floating mb-3">
+							<textarea class="form-control" rows="5" id="description" name="description"
+									  placeholder="請輸入資產相關描述" required></textarea>
+							<label for="description">請輸入資產相關描述</label>
+						</div>
+						<input type="text" id="tx_hash" name="tx_hash" style="display: none">
+						<div class="row">
+							<div class="col">
+								<!-- load file -->
+								<div class="form-floating mb-3">
+									<label class="control-label" for="load_file"></label>
+									<input type="file" id="load_file" name="load_file" class="form-control-file" onchange="encode()" required>
+								</div>
+							</div>
+							<div class="col-auto">
+								<button type="button" id="buttonMint" class="btn btn-primary btn-block" disabled onclick="nftMint()">
+									鑄造NFT
+								</button>
+								<button type="submit" id="buttonUpload" class="btn btn-success btn-block"
+										formaction="{{ url_for('asset.upload') }}" formmethod="post"
+										style="display: none;">
+									上傳數位資產
+								</button>
+								<button id="buttonThird" class="btn btn-info btn-block" style="display: none;" disabled>
+									上傳中...
+								</button>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="col-md-6">
+					<!-- 右半邊的內容 -->
+					<div class="row mb-3">
+						<div class="col-md-12">
+							<div class="form-floating mb-3">
+								<textarea class="form-control" id="base64" readonly="readonly"></textarea>
+								<label for="base64">讀檔後自動產生Base64編碼結果</label>
+							</div>
+						</div>
+						<div class="col-md-12">
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control" id="sha256" readonly="readonly">
+								<label for="sha256">將Base64編碼結果進行sha256雜湊運算</label>
+							</div>
+							<div class="form-floating mb-3">
+								<input type="text" class="form-control" id="transactionHash" name="transactionHash"
+									   readonly="readonly" placeholder="">
+								<label for="transactionHash">存證上鏈交易Hash</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!--<script src="FixERC20Interface.js"></script>-->
+<!--<script src="misc.js"></script>-->
+<script src="{{ url_for('static', filename='js/sha256.js') }}"></script> <!-- jQuery -->
+<script src="{{ url_for('static', filename='js/base64.js') }}"></script> <!-- jQuery -->
+<script>
+	const formLeft = document.getElementById('formLeft');
+	const transactionHash = document.getElementById('transactionHash');
+	const buttonMint = document.getElementById('buttonMint');
+	const buttonUpload = document.getElementById('buttonUpload');
+    const buttonThird = document.getElementById('buttonThird')
+
+    {% autoescape false %}
+    var NftInterface = {{ NFT_abi }};
+    {% endautoescape %}
+
+
+    String.prototype.hexEncode = function () {
+        var hex, i;
+        var result = "";
+        for (i = 0; i < this.length; i++) {
+            hex = this.charCodeAt(i).toString(16);
+            result += ("000" + hex).slice(-4);
+        }
+        return result
+    }
+
+    String.prototype.hexDecode = function () {
+        var j;
+        var hexes = this.match(/.{1,4}/g) || [];
+        var back = "";
+        for (j = 0; j < hexes.length; j++) {
+            back += String.fromCharCode(parseInt(hexes[j], 16));
+        }
+        return back;
+    }
+
+	// 當表單中所有欄位都填寫完畢時啟用送出按鈕
+	formLeft.addEventListener('input', () => {
+		if (formLeft.checkValidity()) {
+			buttonMint.disabled = false;
+		} else {
+			buttonMint.disabled = true;
+		}
+	});
+
+	function checkForm() {
+		// 取得表單中所有的input元素
+		var inputs = document.getElementsByTagName("input");
+		// 檢查每個input元素是否都有值
+		for (var i = 0; i < inputs.length; i++) {
+			if (inputs[i].value === "") {
+				alert("請確認欄位確實填寫且確認錢包交易");
+				return false;
+			}
+		}
+		buttonUpload.style.display = "none";
+		buttonThird.style.display = "block";
+		return true;
+	}
+
+	function encode() {
+        var files = document.getElementById('load_file').files;
+        getBase64(files[0], function (data) {
+            $("#base64").val(data);
+            $("#sha256").val(sha256(data));
+            $("#base64").attr("disabled", "disabled");
+            $("#sha256").attr("readonly", "readonly");
+        });
+    }
+
+    function nftMint() {
+        console.log('nft mint');
+        alert("請確認錢包交易確認訊息後再點擊上傳");
+
+        // 隱藏第一個按鈕
+        buttonMint.style.display = "none";
+        buttonUpload.style.display = "block";
+
+        var targetContract = new web3.eth.Contract(
+            NftInterface,
+            '{{ address_NFT }}',
+            {from: currentAccount, gas: 210000});
+
+        var request = targetContract.methods.nft_mint(
+            document.getElementById('sha256').value
+        );
+
+        request.send(function (err, result) {
+            console.log("callback");
+            console.log(err);
+            console.log(result);
+            $("#transactionHash").val(result);
+            $("#tx_hash").val(result);
+        }).then(function (receipt) {
+                console.log(receipt);
+            },
+            function (receipt) {
+                console.log("failed");
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">首頁</h1>
+    <div class="row">
+        <div class="col-12 col-md-6">熱門商品列表
+            <table id="myTable1" class="display">
+				<thead>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">room_id</th>
+						<th>title</th>
+						<th>introduction</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tfoot>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">room_id</th>
+						<th>title</th>
+						<th>introduction</th>
+						<th></th>
+					</tr>
+				</tfoot>
+				<tbody>
+					{% for ticket in ticket_rank %}
+					<tr>
+						<td>{{ ticket[3] }}</td>
+						<td style="display: none">{{ ticket[0] }}</td>
+						<td>{{ ticket[1] }}</td>
+						<td>{{ ticket[2] }}</td>
+						<td>
+							<form action="{{ url_for('web3.add_to_collect') }}" method="post">
+								<input type="hidden" id="collect_type1" name="collect_type" value="r">
+								<input type="hidden" id="collect_Id1" name="collect_Id" value="{{ ticket[0] }}">
+								<button class="btn btn-outline-primary" type="submit">收藏</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+        </div>
+        <div class="col-12 col-md-6">熱門展間列表
+            <table id="myTable2" class="display">
+				<thead>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">tokenId</th>
+						<th>title</th>
+						<th>creator</th>
+						<th>description</th>
+						<th>subject</th>
+						<th style="display: none">transactionHash</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tfoot>
+					<tr>
+						<th>次數</th>
+						<th style="display: none">tokenId</th>
+						<th>title</th>
+						<th>creator</th>
+						<th>description</th>
+						<th>subject</th>
+						<th style="display: none">transactionHash</th>
+						<th></th>
+					</tr>
+				</tfoot>
+				<tbody>
+					{% for commodities in commodities_rank %}
+					<tr>
+						<td>{{ commodities[6] }}</td>
+						<td style="display: none">{{ commodities[0] }}</td>
+						<td>{{ commodities[1] }}</td>
+						<td>{{ commodities[2] }}</td>
+						<td>{{ commodities[3] }}</td>
+						<td>{{ commodities[4] }}</td>
+						<td style="display: none">{{ commodities[5] }}</td>
+						<td>
+							<form action="{{ url_for('web3.add_to_collect') }}" method="post">
+								<input type="hidden" id="collect_type2" name="collect_type" value="c">
+								<input type="hidden" id="collect_Id2" name="collect_Id" value="{{ commodities[0] }}">
+								<button class="btn btn-outline-primary" type="submit">收藏</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+        </div>
+		<div style="display: none" class="col-xl-3 col-md-6">
+            <div class="card bg-secondary text-white mb-4">
+				<button type="button" class="btn-secondary btn-lg" onclick="getStart()">領錢(僅限一次)</button>
+			</div>
+        </div>
+    </div>
+</div>
+<script>
+	let table1 = new DataTable('#myTable1', {
+        order: [[0, 'desc']]
+	});
+    let table2 = new DataTable('#myTable2', {
+        order: [[0, 'desc']]
+	});
+	{% autoescape false %}
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+	function changeIframeSrc() {
+		var iframe = document.getElementById("myIframe");
+		iframe.src = "https://dev-partyisland.dlll.nccu.edu.tw/vendor";
+	}
+
+	function getStart() {
+		var targetContract = new web3.eth.Contract(
+			CurationTokenInterface,
+            '{{ address_CT }}',
+			{from: currentAccount, gas: 210000});
+
+		var request = targetContract.methods.getStart();
+
+		request.send(function (err, transactionHash) {
+			console.log("transfer callback");
+			console.log(err);
+			console.log(transactionHash);
+		}).then();
+	}
+</script>
+{% endblock %}

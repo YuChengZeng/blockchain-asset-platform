@@ -1,0 +1,126 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div id="main">
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">個人資訊</h1>
+		<div class="card-body">
+			<div class="row">
+				<div>
+					<div class="btn btn-primary text-white mb-4 col-12 col-md-12">
+						<div class="card-body">錢包餘額 <br> {{ my_balance }} CT</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12 col-md-4">
+						<div class="card bg-success text-white mb-4">
+							<div class="card-body">未領取資產租借收入：{{ revenue_ART }} CT</div>
+							<button type="button" class="btn btn-primary" onclick="withdrawART()">提取租借收益</button>
+						</div>
+					</div>
+					<div class="col-12 col-md-4">
+						<div class="card bg-success text-white mb-4">
+							<div class="card-body">未領取展間門票收入：{{ revenue_TT }} CT</div>
+							<button type="button" class="btn btn-primary" onclick="withdrawTT()">提取門票收益</button>
+						</div>
+					</div>
+					<div class="col-12 col-md-4">
+						<div class="card bg-success text-white mb-4">
+							<div class="card-body">未領取展間互動收入：{{ revenue_RWD }} CT</div>
+							<button type="button" class="btn btn-primary" onclick="withdrawRWD({{ revenue_RWD }})">提取互動收益</button>
+						</div>
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="card bg-success text-white mb-4">
+						<div class="card-body">總收入：{{ revenue_commodities+revenue_ticket+revenue_interact }} CT</div>
+						<button type="button" class="btn btn-secondary">收入分析</button>
+					</div>
+					<div class="card bg-success text-white mb-4">
+						<div class="card-body">資產租金收入：{{ revenue_commodities }} CT</div>
+					</div>
+					<div class="card bg-success text-white mb-4">
+						<div class="card-body">展間門票收入：{{ revenue_ticket }} CT</div>
+					</div>
+					<div class="card bg-success text-white mb-4">
+						<div class="card-body">展間互動收入：{{ revenue_interact }} CT</div>
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="card bg-danger text-white mb-4">
+						<div class="card-body">總支出：{{ expense_application+expense_ticket }} CT</div>
+						<button type="button" class="btn btn-secondary">支出分析</button>
+					</div>
+					<div class="card bg-danger text-white mb-4">
+						<div class="card-body">租用支出：{{ expense_application }} CT</div>
+					</div>
+					<div class="card bg-danger text-white mb-4">
+						<div class="card-body">門票支出：{{ expense_ticket }} CT</div>
+					</div>
+				</div>
+			</div>
+		</div>
+<script>
+    {% autoescape false %}
+	var AssetRentalInterface = {{ ART_abi }};
+	var TicketsInterface = {{ TT_abi }};
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+	function withdrawART() {
+		var targetContract = new web3.eth.Contract(
+			AssetRentalInterface,
+            '{{ address_ART }}',
+			{from: currentAccount, gas: 210000});
+
+		var request = targetContract.methods.withdraw();
+
+		request.send(function (err, transactionHash) {
+			console.log("transfer callback");
+			console.log(err);
+			console.log(transactionHash);
+		}).then();
+	}
+
+	function withdrawTT() {
+		var targetContract = new web3.eth.Contract(
+			TicketsInterface,
+            '{{ address_TT }}',
+			{from: currentAccount, gas: 210000});
+
+		var request = targetContract.methods.withdraw();
+
+		request.send(function (err, transactionHash) {
+			console.log("transfer callback");
+			console.log(err);
+			console.log(transactionHash);
+		}).then();
+	}
+
+    function withdrawRWD(amount) {
+        var targetContract = new web3.eth.Contract(
+			CurationTokenInterface,
+            '{{ address_CT }}',
+			{from: currentAccount, gas: 210000});
+
+		var request = targetContract.methods.reword(amount);
+
+		request.send(function (err, transactionHash) {
+			console.log("transfer callback");
+			console.log(err);
+			console.log(transactionHash);
+
+            // 發送 POST 請求到後端 API
+			fetch('{{ url_for("web3.withdraw") }}', {
+			  method: 'POST',
+			  headers: {
+				'Content-Type': 'application/json'
+			  },
+			  body: JSON.stringify({
+				transactionHash: transactionHash,
+			  })
+			})
+		}).then();
+	}
+
+</script>
+{% endblock %}

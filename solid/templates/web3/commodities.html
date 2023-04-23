@@ -1,0 +1,102 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">策展管理模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-3">
+			<div class="card bg-success text-white mb-4">
+				<div class="card-body">商品列表</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.commodities') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間門票</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.show_room') }}"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">展間編輯</div>
+				<a class="small text-white stretched-link" href="#" onclick="toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/vendor')"></a>
+			</div>
+		</div>
+		<div class="col-12 col-md-3">
+			<div class="card bg-secondary text-white mb-4">
+				<div class="card-body">已取得授權</div>
+				<a class="small text-white stretched-link" href="{{ url_for('curation.license') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">商品列表
+			<form action="{{ url_for('curation.search') }}" method="post" style="float: right;">
+				<label></label>
+					<select class="dataTable-selector" id="s_key" name="s_key" aria-controls="data-table-2" >
+						<option value="">搜尋：</option>
+						<option value="title">標題</option>
+						<option value="creator">創建者</option>
+						<option value="subject">主題</option>
+						<option value="description">描述</option>
+					</select>
+				<input class="" name="s_value" type="search" placeholder="search for ..." aria-controls="data-table-1" value="">
+				<button type="submit" class="btn btn-outline-primary">Go</button>
+			</form>
+		</div>
+		<div class="card-body">
+			<div class="row">
+			{% for launch_detail in launch_detail_list %}
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-light text-black mb-4">
+					<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+						{{ launch_detail[6] }}
+					</div>
+
+					<div class="card-body">
+						<a href="{{ url_for('curation.commodities_view', launch_id=launch_detail[5], day=launch_detail[1] )}}">
+							<img class="card-img-top" src="{{ launch_detail[8]}}">
+						</a>
+					</div>
+					<div class="card-footer d-flex align-items-center justify-content-evenly">
+						<div>{{ launch_detail[1] }}天</div>
+						<div>{{ launch_detail[2] }} CT</div>
+						<button class="btn btn-primary"
+								onclick="approve({{ launch_detail[2] }}); application({{ launch_detail[5] }})">租用
+						</button>
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		</div>
+	</div>
+</div>
+<script>
+	{% autoescape false %}
+	var AssetRentalInterface = {{ ART_abi }};
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+	function approve(amount) {
+		var targetContract = new web3.eth.Contract(
+            CurationTokenInterface,
+            '{{ address_CT }}',
+            {from: currentAccount});
+        targetContract.methods.approve('{{ address_ART }}', amount).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+
+    function application(launch_id) {
+        var targetContract = new web3.eth.Contract(
+            AssetRentalInterface,
+            '{{ address_ART }}',
+            {from: currentAccount, gas: 210000});
+		targetContract.methods.application(launch_id).send()
+            .then(function (result) {
+                console.log(result);
+            });
+    }
+</script>
+{% endblock %}

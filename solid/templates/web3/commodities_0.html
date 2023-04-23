@@ -1,0 +1,143 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">商品瀏覽列表</h1>
+	<ol class="breadcrumb mb-4">
+		<li class="breadcrumb-item"><a href="{{ url_for('show_entries') }}">Dashboard</a></li>
+		<li class="breadcrumb-item active">商品瀏覽列表</li>
+	</ol>
+
+	<div class="card-header">商品列表</div>
+	<div class="card-body">
+		<div class="datatable-wrapper datatable-loading no-footer sortable searchable fixed-columns">
+			<div class="datatable-top">
+				<div class="datatable-dropdown">
+					<label>
+						Show
+						<select id="select_page_items" class="datatable-selector" onchange="relocate(this)">
+							<option value="1">1</option>
+							<option value="3">3</option>
+							<option value="5">5</option>
+							<option value="10">10</option>
+							<option value="15">15</option>
+							<option value="20">20</option>
+							<option value="25">25</option>
+						</select>
+						entries
+					</label>
+				</div>
+				<div class="datatable-search">
+					<input class="datatable-input" placeholder="Search..." type="search" title="Search within table"
+						   aria-controls="datatablesSimple">
+				</div>
+			</div>
+			<div class="datatable-container">
+				<table class="datatable-table">
+					<thead>
+					<tr>
+						<th style="display: none">商品編號</th>
+						<th>商品名稱</th>
+						<th>租期</th>
+						<th>租金</th>
+					</tr>
+					</thead>
+					<tbody>
+					{% for launch_detail in launch_detail_list %}
+					<tr>
+						<td id="launch_id" style="display: none">{{ launch_detail[5] }}</td>
+						<td id="object_id">{{ launch_detail[0] }}</td>
+						<td id="rent_days">{{ launch_detail[1] }}天</td>
+						<td id="price">{{ launch_detail[2] }} Ether</td>
+						<td>
+							<button class="btn btn-primary"
+									onclick="application({{ launch_detail[5] }}, {{ launch_detail[2] }})"><i
+									class="">租用</i></button>
+						</td>
+					</tr>
+					{% endfor %}
+					</tbody>
+					<tbody>
+					{% for asset in assets %}
+					<tr>
+						<td>{{ asset.title }}</td>
+						<td>
+							<a href="{{ url_for('web3.launch', asset_title=asset.title, token_id=asset.NftId) }}#GO">
+								<button class="btn btn-primary"><i class="">上架</i></button>
+							</a>
+						</td>
+					</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			<div class="datatable-bottom">
+				<div class="datatable-info">Showing {{ misc.start }} to {{ misc.end }} of {{ misc.total }} entries</div>
+				<nav class="datatable-pagination">
+					<li class="datatable-pagination-list-item">
+						<a href="{{ url_for('curation.commodities', page=misc['prev'], items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}" class="datatable-pagination-list-item-link"><</a>
+					</li>
+					<span>
+						{% for page_no in range(misc['paging_from'], misc['paging_to'] + 1) %}
+						<li class="datatable-pagination-list-item">
+							<a href="{{ url_for('curation.commodities', page=page_no, items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}" class="datatable-pagination-list-item-link">{{ page_no + 1 }}</a>
+						</li>
+						{% endfor %}
+					</span>
+					<li class="datatable-pagination-list-item">
+						<a href="{{ url_for('curation.commodities', page=misc['next'], items=misc['items'], sort=misc['sort'], asc=misc['asc']) }}" class="datatable-pagination-list-item-link">></a>
+					</li>
+				</nav>
+			</div>
+		</div>
+	</div>
+
+</div>
+<script>
+	//this part is about table sort and relocate
+	var page_url = "{{ url_for('curation.commodities') }}";
+	var page_field = "{{misc['sort']}}";
+	var page_sort = {{misc['asc']}};
+	var page_items = {{misc['items']}};
+	var page_page = {{misc['page']}};
+
+	{% autoescape false %}
+	var AssetRentalInterface = {{ abi }};
+    {% endautoescape %}
+
+    function application(launch_id, price) {
+        var targetContract = new web3.eth.Contract(
+            AssetRentalInterface,
+            '{{ address }}',
+            {from: currentAccount});
+		targetContract.methods.application(launch_id).send({value: price})
+            .then(function (result) {
+                console.log(result);
+            });
+    }
+
+    function relocate(){
+		var item = document.getElementById("select_page_items");
+		var item_val=item.options[item.selectedIndex].value;
+		console.log(item_val);
+		sort_table(page_url, page_field, page_sort, item_val, page_page);
+	}
+
+	//change pageitem selector to {{misc['items']}}
+	var item = document.getElementById("select_page_items");
+	for(var i=0 ; i<item.options.length ; i++) {
+		if(item.options[i].value == page_items) {
+			item.selectedIndex = i;
+			break;
+		}
+	}
+
+	//change search selector to {{misc['s_key']}}
+	var item = document.getElementById("s_key");
+	for(var i=0 ; i<item.options.length ; i++) {
+		if(item.options[i].value == "{{ misc['s_key'] }}") {
+			item.selectedIndex = i;
+			break;
+		}
+	}
+</script>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">我的收藏</h1>
+	<div class="row">
+<!--		<div class="col-12 col-md-6">-->
+<!--			<div class="card bg-secondary text-white mb-4">-->
+<!--				<div class="card-body">收藏的展間</div>-->
+<!--				<a class="small text-white stretched-link" href=""></a>-->
+<!--			</div>-->
+<!--		</div>-->
+<!--		<div class="col-12 col-md-6">-->
+<!--			<div class="card bg-success text-white mb-4">-->
+<!--				<div class="card-body">收藏的商品</div>-->
+<!--				<a class="small text-white stretched-link" href=""></a>-->
+<!--			</div>-->
+<!--		</div>-->
+	</div>
+	<div class="container">
+		<div class="card-header">商品列表
+			<form action="{{ url_for('web3.collection') }}" method="post" style="float: right;">
+				<button style="display: none" class="btn btn-outline-primary" type="submit">清空收藏</button>
+			</form>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				{% for asset in asset_list %}
+				<div class="col-xl-3 col-md-6">
+					<div class="card bg-light text-black mb-4">
+						<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+							{{ asset.title }}
+						</div>
+						<div class="card-body">
+
+							<a href="">
+								<img class="card-img-top"
+									 src="{{ asset.img }}">
+							</a>
+						</div>
+						<div class="card-footer d-flex align-items-center justify-content-evenly">
+							<form action="{{ url_for('curation.search') }}" method="post" style="float: right;">
+								<input style="display: none" class="" name="s_key" type="search" placeholder="search for ..." aria-controls="data-table-1" value="title">
+								<input style="display: none" class="" name="s_value" type="search" placeholder="search for ..." aria-controls="data-table-1" value="{{ asset.title }}">
+								<button type="submit" class="btn btn-primary">查看</button>
+							</form>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="card-header">展間列表
+			<form action="{{ url_for('web3.collection') }}" method="post" style="float: right;">
+				<button style="display: none" class="btn btn-outline-primary" type="submit">清空收藏</button>
+			</form>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				{% for room in room_list %}
+				<div class="col-xl-3 col-md-6">
+					<div class="card bg-light text-black mb-4">
+						<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+							{{ room.title }}
+						</div>
+						<div class="card-body">
+							<a href="">
+								<img class="card-img-top"
+									 src="{{room.coverUrl}}">
+							</a>
+							<div>{{ room.introduction if room.introduction else "沒有展間描述" }}</div>
+						</div>
+						<div class="card-footer d-flex align-items-center justify-content-evenly">
+							<div style="display: none" id="roomId">{{ room.room_id }}</div>
+							<div id="roomPrice">{{ room.price }}</div>
+							<button type="button" class="btn btn-primary" onclick="checkTicket('{{ room.room_id }}', '{{ room.price }}')">進入展間</button>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	{% autoescape false %}
+	// var TicketsInterface = {{ TT_abi }};
+	// var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+    function checkTicket(roomId, roomPrice) {
+  		fetch('/visitor/check_ticket/' + roomId)
+			.then(response => response.text())
+			.then(data => {
+			  if (data === '1') {
+				alert('您已購票，進入展間！');
+                toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/exhibition?id='+roomId+'&room=1');
+			  } else {
+				alert('您尚未購票，請購票！');
+                approve(roomPrice);
+                buyTicket(roomId);
+			  }
+			})
+			// .catch(error => {
+			//   console.error('驗票發生錯誤：', error);
+			// });
+		}
+
+	function approve(amount) {
+		var targetContract = new web3.eth.Contract(
+            CurationTokenInterface,
+            '{{ address_CT }}',
+            {from: currentAccount});
+        targetContract.methods.approve('{{ address_TT }}', amount).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+
+	function buyTicket(room_id) {
+		var targetContract = new web3.eth.Contract(
+            TicketsInterface,
+            '{{ address_TT }}',
+            {from: currentAccount, gas: 210000});
+		targetContract.methods.buyTicket(room_id).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+</script>
+{% endblock %}

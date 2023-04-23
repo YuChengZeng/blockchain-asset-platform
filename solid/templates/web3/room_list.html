@@ -1,0 +1,91 @@
+{% extends "index.html" %}
+{% block web3 %}
+<div class="container-fluid px-4">
+	<h1 class="mt-4">觀展模組</h1>
+	<div class="row">
+		<div class="col-12 col-md-6">
+			<div class="card bg-danger text-white mb-4">
+				<div class="card-body">如您已購票，請等待MetaMask錢包交易紀錄完成(變成綠色)後再次點擊觀展。<br>
+					如您不小心再次點擊，可直接拒絕重複的MetaMask錢包交易避免重複購票。
+				</div>
+				<a class="small text-white stretched-link" href="{{ url_for('visitor.room_list') }}"></a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="card-header">展間列表
+		</div>
+		<div class="card-body">
+			<div class="row">
+			{% for room in rooms %}
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-light text-black mb-4">
+					<div class="card-header" style="display: flex; align-items: center; justify-content: center;">
+						{{ room.title }}
+					</div>
+					<div class="card-body">
+						<a href="">
+							<img class="card-img-top"
+								 src="{{room.coverUrl}}">
+						</a>
+						<div>{{ room.introduction if room.introduction else "沒有展間描述" }}</div>
+					</div>
+					<div class="card-footer d-flex align-items-center justify-content-evenly">
+						<div style="display: none" id="roomId">{{ room.room_id }}</div>
+						<div id="roomPrice">{{ room.price }}</div>
+						<button type="button" class="btn btn-primary" onclick="checkTicket('{{ room.room_id }}', '{{ room.price }}')">進入展間</button>
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		</div>
+	</div>
+</div>
+<script>
+	{% autoescape false %}
+	var TicketsInterface = {{ TT_abi }};
+	var CurationTokenInterface = {{ CT_abi }};
+    {% endautoescape %}
+
+    function checkTicket(roomId, roomPrice) {
+  		fetch('/visitor/check_ticket/' + roomId)
+			.then(response => response.text())
+			.then(data => {
+			  if (data === '1') {
+				alert('您已購票，進入展間！');
+                toggleDivs('https://dev-partyisland.dlll.nccu.edu.tw/exhibition?id='+roomId+'&room=1');
+			  } else {
+				alert('您尚未購票，請購票，並等待MetaMask錢包交易紀錄完成(變成綠色)後再次點擊觀展！');
+                approve(roomPrice);
+                buyTicket(roomId);
+			  }
+			})
+			// .catch(error => {
+			//   console.error('驗票發生錯誤：', error);
+			// });
+		}
+
+	function approve(amount) {
+		var targetContract = new web3.eth.Contract(
+            CurationTokenInterface,
+            '{{ address_CT }}',
+            {from: currentAccount});
+        targetContract.methods.approve('{{ address_TT }}', amount).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+
+	function buyTicket(room_id) {
+		var targetContract = new web3.eth.Contract(
+            TicketsInterface,
+            '{{ address_TT }}',
+            {from: currentAccount, gas: 210000});
+		targetContract.methods.buyTicket(room_id).send()
+            .then(function (result) {
+                console.log(result);
+            });
+	}
+</script>
+{% endblock %}

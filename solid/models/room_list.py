@@ -8,4 +8,4 @@ class Room_list(db.Model):
 	coverUrl = db.Column(db.String(128))
 	signboardUrl = db.Column(db.String(128))
 	title = db.Column(db.String(64))
-	introduction = db.Column(db.String(256))
+	introduction = db.Column(db.String(2048))

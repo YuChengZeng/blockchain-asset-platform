@@ -63,7 +63,7 @@
 					</div>
 					<div style="margin-bottom: 10px;"></div>
 					<div class="col-md-6">
-						<button class="btn btn-primary" type="button" onclick="checkForm()">上架</button>
+						<button id="submitButton" class="btn btn-primary" type="button" onclick="checkForm()">上架</button>
 					</div>
 				</div>
 			</form>
@@ -74,6 +74,9 @@
     {% autoescape false %}
     var AssetRentalInterface = {{ ART_abi }};
     {% endautoescape %}
+	var globalReceipt = '';
+	var globalTransactionHash = '';
+    var intervalId = '';
 
 	function checkForm() {
 		// 取得表單中所有的input元素
@@ -102,10 +105,43 @@
             parseInt(document.getElementById("price").value));
 
         request.send(function (err, transactionHash) {
-            console.log("transfer callback");
-            console.log(err);
-            console.log(transactionHash);
-        }).then();
+			if (err) {
+				console.log(err);
+			} else {
+				console.log("Transaction hash:", transactionHash);
+				web3.eth.getTransactionReceipt(transactionHash).then(function(receipt) {
+                    globalReceipt = receipt;
+                    globalTransactionHash = transactionHash;
+				});
+                var button = document.getElementById("submitButton");
+                if (!globalReceipt) {
+                    button.innerText = "上架中...";
+                    button.classList.remove("btn-primary");
+                    button.classList.add("btn-info");
+                    button.disabled = true;
+                }
+                intervalId = setInterval(checkTransactionStatus, 5000);
+			}
+		}).then();
     }
+
+
+    function checkTransactionStatus() {
+        web3.eth.getTransactionReceipt(globalTransactionHash).then(function(receipt) {
+			console.log("Transaction receipt:", receipt);
+			globalReceipt = receipt;
+		});
+		if (globalReceipt) {
+			// 更新按鈕狀態
+			var button = document.getElementById('submitButton');
+			button.innerText = '上架';
+			button.classList.remove("btn-info");
+			button.classList.add("btn-primary");
+            button.disabled = false;
+            alert("上架完成");
+			// 停止檢查
+			clearInterval(intervalId);
+		}
+	}
 </script>
 {% endblock %}

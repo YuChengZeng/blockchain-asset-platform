@@ -9,5 +9,6 @@ class Asset_detail(db.Model):
 	creator = db.Column(db.String(64))
 	description = db.Column(db.String)
 	subject = db.Column(db.String(64))
+	format = db.Column(db.String(10))
 	transactionHash = db.Column(db.String(128))
 

@@ -33,7 +33,6 @@
 			<form action="{{ url_for('curation.search') }}" method="post" style="float: right;">
 				<label></label>
 					<select class="dataTable-selector" id="s_key" name="s_key" aria-controls="data-table-2" >
-						<option value="">搜尋：</option>
 						<option value="title">標題</option>
 						<option value="creator">創建者</option>
 						<option value="subject">主題</option>
@@ -54,7 +53,14 @@
 
 					<div class="card-body">
 						<a href="{{ url_for('curation.commodities_view', launch_id=launch_detail[5], day=launch_detail[1] )}}">
-							<img class="card-img-top" src="{{ launch_detail[8]}}">
+<!--							<img class="card-img-top" src="{{ launch_detail[8]}}">-->
+							<script>
+								if ("{{ launch_detail[8] }}".includes("square")) {
+									document.write('<img class="card-img-top" src="{{ launch_detail[8]}}">');
+								} else if ("{{ launch_detail[8] }}".includes("original")) {
+									document.write('<video src="{{ launch_detail[8]}}" width=100% height=100% controls disable>您的瀏覽器不支援影片播放。</video>')
+								}
+							</script>
 						</a>
 					</div>
 					<div class="card-footer d-flex align-items-center justify-content-evenly">

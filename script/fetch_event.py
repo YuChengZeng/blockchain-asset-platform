@@ -13,18 +13,14 @@ from model import *  # if for PyCharm execution, use script.model
 from config import *  # if for PyCharm execution, use script.config
 from omeka_s_tools.api import OmekaAPIClient
 import binascii
+import asyncio
 
 
-def source(transactionHash):
-	# omeka_auth = OmekaAPIClient(
-	# 	api_url='http://localhost:81/api',
-	# 	key_identity='fumP6KLVevGGOBYVy4c7C7kcLLr25eXa',
-	# 	key_credential='rrE5dnK4M52IOhL4sXo2GgjdipmGtw8Q'
-	# )
+async def source(transactionHash):
 	omeka_auth = OmekaAPIClient(
 		api_url='http://localhost:81/api',
-		key_identity='C1qUawykxTyB61j1rf0DPwJw68z0RgZo',
-		key_credential='SZtaDwSzUR357zI5z0qKW9S5cU9dSw96'
+		key_identity='fumP6KLVevGGOBYVy4c7C7kcLLr25eXa',
+		key_credential='rrE5dnK4M52IOhL4sXo2GgjdipmGtw8Q'
 	)
 
 	item = omeka_auth.filter_items_by_property(
@@ -32,20 +28,25 @@ def source(transactionHash):
 		filter_value=transactionHash,  # 目標sonrce欄位hash值
 		filter_type='eq',
 		page=1)
-	# print('2222222')
-	# print(item)
 	if not item['results']:
-		print('Can,t find resource in Omka')
+		print('Can,t find resource in Omeka')
 		relative_url = ''
 	else:
-		url = item['results'][0]["thumbnail_display_urls"]["square"]
-		# print(url)
-		relative_url = url.replace("http://localhost:81", "https://blockchain-omekas.dlll.nccu.edu.tw")
-		# relative_url = url.replace("http://localhost:81", "http://blockchain-asset.dlll.nccu.edu.tw")
+		format = item['results'][0]["dcterms:format"][0]["@value"]
+		if format == "video":
+			item_url = item['results'][0]["o:media"][0]["@id"]
+			print(item_url)
+			result = requests.get(item_url)
+			url = result.json()['o:original_url']
+			relative_url = url.replace("http://localhost:81/", "https://blockchain-omekas.dlll.nccu.edu.tw/")
+			print(relative_url)
+		elif format == "image":
+			url = item['results'][0]["thumbnail_display_urls"]["square"]
+			relative_url = url.replace("http://localhost:81/", "https://blockchain-omekas.dlll.nccu.edu.tw/")
 	return relative_url
 
 
-def fetch_Nft_mint(chain, session):
+async def fetch_Nft_mint(chain, session):
 	row = session.query(Asset_nft).order_by(Asset_nft.blockNumber.desc()).first()
 	if not row:
 		from_block = 0
@@ -66,10 +67,21 @@ def fetch_Nft_mint(chain, session):
 			  entry['transactionHash'].hex(), entry['blockNumber'])
 		transactionHash = str(entry['transactionHash'].hex())
 		print(transactionHash)
-		img = source(transactionHash)
+		img = await source(transactionHash)
 		# print(img)
 		if not img:
-			pass
+			new_event = Asset_nft(
+				NftId=entry['args']['NftId'],
+				sha=entry['args']['sha'],
+				time=entry['args']['time'],
+				operator=entry['args']['operator'],
+				transactionHash=transactionHash,
+				blockNumber=entry['blockNumber'],
+				source=''
+			)
+			session.add(new_event)
+			session.commit()
+			i += 1
 		else:
 			new_event = Asset_nft(
 				NftId=entry['args']['NftId'],
@@ -78,7 +90,7 @@ def fetch_Nft_mint(chain, session):
 				operator=entry['args']['operator'],
 				transactionHash=transactionHash,
 				blockNumber=entry['blockNumber'],
-				img=img
+				source=img
 			)
 			session.add(new_event)
 			session.commit()
@@ -138,9 +150,10 @@ def status(chain, session):  # 資料庫更新下架紀錄
 		# 針對每個LaunchStatus事件直接改資料庫內資料
 		launch_detail = target_contract.functions.launchDetail(event['args']['launchId']).call()
 		status = session.query(Launch_to_nft).filter_by(launch_id=launch_detail[0]).first()
-		status.status = launch_detail[4]
-		session.commit()
-		i += 1
+		if status is not None:
+			status.status = launch_detail[4]
+			session.commit()
+			i += 1
 	print(f'{i} Launch Status Changed')
 
 
@@ -164,11 +177,12 @@ def set_room(chain, session):  # fetch SetRoom event to DB
 		room_id = event['args']['roomId']
 		# 資料庫更新
 		update_target = session.query(Set_room).filter_by(room_id=room_id).first()
-		update_target.address = event['args']['roomOwner']
-		update_target.price = event['args']['price']
-		update_target.blockNumber = event['blockNumber']
-		session.commit()
-		i += 1
+		if update_target is not None:
+			update_target.address = event['args']['roomOwner']
+			update_target.price = event['args']['price']
+			update_target.blockNumber = event['blockNumber']
+			session.commit()
+			i += 1
 	print(f'{i} new room Room/Price Set')
 
 
@@ -233,14 +247,6 @@ def get_room_list(session):
 	print(f'{i} new room finish setting')
 
 
-def token_statistics(session):
-	token = session.query(Token).filter(Token.status.like(1))
-	token_tokenIds = {'token_tokenId': []}
-	for row in token:
-		token_tokenIds['token_tokenId'].append(row.token_tokenId)
-	print(token_tokenIds)
-
-
 def fetch_application(chain, session):
 	row = session.query(Application_list).order_by(Application_list.blockNumber.desc()).first()
 	if not row:
@@ -302,10 +308,7 @@ def main():
 	skychain = Web3(Web3.HTTPProvider(RPC_URI))  # set web3 target
 	skychain.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-	# transactionHash = '0x66ce99ee4cbe7f941eed2713eb545dc4c6a10165e6bcfe1a3f79e59f01ea9329'
-	#
-	# source(transactionHash)
-	fetch_Nft_mint(skychain, session)
+	asyncio.run(fetch_Nft_mint(skychain, session))
 	launch2nft(skychain, session)
 	status(skychain, session)
 	set_room(skychain, session)

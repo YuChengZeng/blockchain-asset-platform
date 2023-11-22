@@ -10,10 +10,8 @@ import time
 from re import escape
 from sqlalchemy.exc import SQLAlchemyError
 from solid.extension import db
-from solid.views.misc import items_pagebar, last_page
 from solid.views.config import *  # if for PyCharm execution, use script.config
 from solid.views.filter import source
-from solid.models.token import Token
 from solid.models.asset_detail import Asset_detail
 from solid.models.asset_nft import Asset_nft
 from solid.models.launch_to_nft import Launch_to_nft
@@ -23,7 +21,6 @@ from web3 import Web3
 from web3.auto import w3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TransactionNotFound
-from solid.models.user import User
 from werkzeug.utils import secure_filename
 from omeka_s_tools.api import OmekaAPIClient
 
@@ -78,7 +75,7 @@ def search_core():  # 加入搜尋條件的商品列表
 	query = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 		.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.transactionHash, Asset_nft.img) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.transactionHash, Asset_nft.source) \
 		.filter(search_target.like('%' + session['s_value'] + '%'))
 	# print(query)
 
@@ -96,7 +93,7 @@ def commodities():  # 商品列表
 	query = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 		.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.transactionHash, Asset_nft.img)
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.transactionHash, Asset_nft.source)
 	asset_list = query.all()
 	# print(asset_list)
 
@@ -117,7 +114,7 @@ def search():  # 加入搜尋條件的商品列表
 def commodities_view(launch_id, day):
 	# target = Asset_detail.query.filter_by(transactionHash=transactionHash) \
 	# 	.join(Asset_nft, Asset_detail.transactionHash == Asset_nft.transactionHash) \
-	# 	.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_nft.img) \
+	# 	.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_nft.source) \
 	# 	.first()
 
 	# launch_detail_list = get_launch_detail_list()
@@ -132,7 +129,7 @@ def commodities_view(launch_id, day):
 	target = Launch_to_nft.query.filter_by(launch_id=launch_id) \
 		.join(Asset_nft, Launch_to_nft.tokenId == Asset_nft.NftId) \
 		.join(Asset_detail, Asset_detail.transactionHash == Asset_nft.transactionHash) \
-		.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_nft.img, Launch_to_nft.price, Launch_to_nft.launch_id) \
+		.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_nft.source, Launch_to_nft.price, Launch_to_nft.launch_id) \
 		.first()
 	# print(f'---{target.title}')
 
@@ -167,7 +164,7 @@ def license():
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 		.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
 		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash,
-					 Asset_nft.img) \
+					 Asset_nft.source) \
 		.all()
 	# print(asset_list)
 	asset_list = [sublist[1:] for sublist in asset_list]
@@ -209,6 +206,7 @@ def show_room():
 	for room in rooms:
 		# print(room['_id'])
 		room_data = db.session.query(Set_room).filter(Set_room.room_id == room['_id']).first()
+		print(room_data)
 		if room_data is None:
 			# 如果 room_data 為 None，表示資料庫中沒有該筆資料，進行新增操作
 			new_room = Set_room(

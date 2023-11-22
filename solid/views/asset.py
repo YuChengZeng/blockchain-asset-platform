@@ -10,10 +10,8 @@ import time
 from re import escape
 from sqlalchemy.exc import SQLAlchemyError
 from solid.extension import db
-from solid.views.misc import items_pagebar, last_page
 from solid.views.config import *  # if for PyCharm execution, use script.config
 from solid.views.filter import source
-from solid.models.token import Token
 from solid.models.asset_detail import Asset_detail
 from solid.models.asset_nft import Asset_nft
 from solid.models.launch_to_nft import Launch_to_nft
@@ -22,7 +20,6 @@ from web3 import Web3
 from web3.auto import w3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TransactionNotFound
-from solid.models.user import User
 from werkzeug.utils import secure_filename
 from omeka_s_tools.api import OmekaAPIClient
 
@@ -64,7 +61,7 @@ def search_core():  # 加入搜尋條件的搜尋
 	# launch_detail_list = get_launch_detail_list()
 	query = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.img) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.source) \
 		.filter(Asset_nft.operator.like(my_address)) \
 		.filter(search_target.like('%' + session['s_value'] + '%'))
 
@@ -77,7 +74,7 @@ def search_core():  # 加入搜尋條件的搜尋
 		asset_detail.append(asset.subject)
 		asset_detail.append(asset.operator)
 		asset_detail.append(asset.transactionHash)
-		asset_detail.append(asset.img)
+		asset_detail.append(asset.source)
 		asset_detail_list.append(asset_detail)
 		asset_detail = []
 
@@ -115,6 +112,7 @@ def upload():
 		creator = request.form.get('creator')
 		description = request.form.get('description')
 		subject = request.form.get('subject')
+		format = request.form.get('format')
 		transactionHash = request.form.get('tx_hash')
 		item = {
 			'dcterms:title': [
@@ -137,6 +135,11 @@ def upload():
 					'value': subject
 				}
 			],
+			'dcterms:format': [
+				{
+					'value': format
+				}
+			],
 			'dcterms:source': [
 				{
 					'value': transactionHash
@@ -156,6 +159,7 @@ def upload():
 			creator=creator,
 			description=description,
 			subject=subject,
+			format=format,
 			transactionHash=transactionHash,
 		)
 		db.session.add(detail)
@@ -173,7 +177,7 @@ def asset_list():
 	my_address = session['currentAccount']
 	asset_list = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.img) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.source) \
 		.filter(Asset_nft.operator.like(my_address)) \
 		.all()
 	for asset in asset_list:
@@ -183,7 +187,7 @@ def asset_list():
 		asset_detail.append(asset.subject)
 		asset_detail.append(asset.operator)
 		asset_detail.append(asset.transactionHash)
-		asset_detail.append(asset.img)
+		asset_detail.append(asset.source)
 		asset_detail_list.append(asset_detail)
 		asset_detail=[]
 
@@ -203,10 +207,10 @@ def search():  # 加入搜尋條件的商品列表
 def asset_view(transactionHash):
 	target = Asset_detail.query.filter_by(transactionHash=transactionHash) \
 		.join(Asset_nft, Asset_detail.transactionHash == Asset_nft.transactionHash) \
-		.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.img)\
+		.add_columns(Asset_detail.title, Asset_detail.creator, Asset_detail.description, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.source)\
 		.first()
 	# print(f'{target}')
-	img = target.img
+	source = target.source
 
 	if request.method == 'POST':
 		# 更新omekas和資料庫 metadata
@@ -251,9 +255,9 @@ def asset_view(transactionHash):
 		db.session.commit()
 		print(f'DB Finish Update')
 
-		return render_template('web3/asset_view.html', target=target, img=img)
+		return render_template('web3/asset_view.html', target=target, img=source)
 
-	return render_template('web3/asset_view.html', target=target, img=img)
+	return render_template('web3/asset_view.html', target=target, img=source)
 
 
 @mod.route('/launch/<token_id>/<asset_title>', methods=['GET', 'POST'])
@@ -281,7 +285,7 @@ def get_launch_detail_list():
 
 def sort(launch_detail_list):
 	session['sort'] = request.form['sort']
-	sort_key = ['title', 'days', 'price', 'hash', 'status', 'id', 'img']
+	sort_key = ['title', 'days', 'price', 'hash', 'status', 'id', 'source']
 	index = sort_key.index(request.form['sort'])
 	launch_detail_list = sorted(launch_detail_list, key=lambda x: x[index])
 	return launch_detail_list
@@ -292,11 +296,11 @@ def sort(launch_detail_list):
 def launched_assets(): #商品下架
 	launch_detail_list = get_launch_detail_list()
 
-	print(f'Launch Detail {launch_detail_list}')
+	# print(f'Launch Detail {launch_detail_list}')
 	asset_list = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 		.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.img) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.source) \
 		.all()
 	print(f'asset_list - {asset_list}')
 
@@ -309,7 +313,7 @@ def launched_assets(): #商品下架
 		query = db.session.query(Asset_nft) \
 			.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 			.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
-			.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.img) \
+			.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash, Asset_nft.source) \
 			.filter(search_target.like('%' + session['s_value'] + '%'))
 		asset_list = query.all()
 		asset_list = [sublist[1:] for sublist in asset_list]
@@ -317,9 +321,10 @@ def launched_assets(): #商品下架
 		asset_dict = {}
 		for asset in asset_list:
 			asset_dict[asset[0]] = asset[1], asset[3], asset[4]
-		# print(asset_dict)
+		# print(f'asset_dict - {asset_dict}')
 		# 遍歷每個 list，進行替換
 		for launch_detail in launch_detail_list:
+			print(asset_dict[launch_detail[0]])
 			value = asset_dict[launch_detail[0]]
 			launch_detail.append(value[2])
 			launch_detail[0] = value[0]
@@ -339,7 +344,7 @@ def launched_assets(): #商品下架
 	asset_dict = {}
 	for asset in asset_list:
 		asset_dict[asset[0]] = asset[1], asset[3], asset[4]
-	# print(f'asset_dict - {asset_dict}')
+	print(f'asset_dict - {asset_dict}')
 	# 遍歷每個 list，進行替換
 	for launch_detail in launch_detail_list:
 		value = asset_dict[launch_detail[0]]

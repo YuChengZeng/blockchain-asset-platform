@@ -11,8 +11,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.elements import and_
 
 from solid.extension import db
-from solid.views.misc import items_pagebar, last_page
-from solid.models.token import Token
 from solid.models.asset_detail import Asset_detail
 from solid.models.asset_nft import Asset_nft
 from solid.models.launch_to_nft import Launch_to_nft
@@ -26,13 +24,30 @@ from web3 import Web3
 from web3.auto import w3
 from web3.middleware import geth_poa_middleware
 from web3.exceptions import TransactionNotFound
-from solid.models.user import User
 from werkzeug.utils import secure_filename
 import requests
 from omeka_s_tools.api import OmekaAPIClient
 
 mod = Blueprint('filter', __name__)
 CORS(mod)
+
+
+@mod.route('/information', methods=['GET', 'POST'])
+@mod.route('/information/<transactionHash>', methods=['GET', 'POST'])
+def information(transactionHash):
+	omeka_auth = OmekaAPIClient(
+		api_url='http://localhost:81/api',
+		key_identity='fumP6KLVevGGOBYVy4c7C7kcLLr25eXa',
+		key_credential='rrE5dnK4M52IOhL4sXo2GgjdipmGtw8Q'
+	)
+
+	item = omeka_auth.filter_items_by_property(
+		filter_property='dcterms:source',
+		filter_value=transactionHash,  # 目標sonrce欄位hash值
+		filter_type='eq',
+		page=1)
+
+	return item
 
 
 @mod.route('/source', methods=['GET', 'POST'])
@@ -49,15 +64,24 @@ def source(transactionHash):
 		filter_value=transactionHash,  # 目標sonrce欄位hash值
 		filter_type='eq',
 		page=1)
-	url = item['results'][0]["thumbnail_display_urls"]["square"]
-	relative_url = url.replace("http://localhost:81/api", "https://blockchain-omekas.dlll.nccu.edu.tw")
+	format = item['results'][0]["dcterms:format"][0]["@value"]
+	if format == "video":
+		item_url = item['results'][0]["o:media"][0]["@id"]
+		print(item_url)
+		result = requests.get(item_url)
+		url = result.json()['o:original_url']
+		relative_url = url.replace("http://localhost:81/", "https://blockchain-omekas.dlll.nccu.edu.tw/")
+		print(relative_url)
+	elif format == "image":
+		url = item['results'][0]["thumbnail_display_urls"]["square"]
+		relative_url = url.replace("http://localhost:81/", "https://blockchain-omekas.dlll.nccu.edu.tw/")
 
-	# return redirect(relative_url)
 	return relative_url
 
 
 @mod.route('/licence_check/<_id>', methods=['GET', 'POST'])
 def licence_check(_id):
+	# PI api
 	# 給使用者_id
 	# 回傳使用者的授權和期限內憑證的到期日
 	target_user = Pi_user.query.filter_by(_id=_id).first()
@@ -104,6 +128,8 @@ def licence_check(_id):
 
 @mod.route('/api_interactExisting', methods=['POST'])
 def api_interactExisting():
+	# PI api
+	# 處理展間內對圖片點喜歡不喜歡，檢查是否已經點過
 	result = request.get_json(force=True)
 	# 檢查是否已存在資料庫
 	target_user = Pi_user.query.filter_by(_id=result['uid']).first()
@@ -121,6 +147,8 @@ def api_interactExisting():
 
 @mod.route('/api_exhInteract', methods=['GET', 'POST'])
 def api_exhInteract():
+	# PI api
+	# 處理展間內對圖片點喜歡不喜歡
 	result = request.get_json(force=True)
 	# 互動結果記錄到資料庫
 	target_user = Pi_user.query.filter_by(_id=result['uid']).first()
@@ -148,6 +176,8 @@ def api_exhInteract():
 
 @mod.route('/api_licence_list/<_id>', methods=['GET', 'POST'])
 def api_licence_list(_id):
+	# PI api
+	# 給PI的使用者ID，回傳該使用者租期內的圖片連結
 	to_block = chain.eth.blockNumber
 	target_user = Pi_user.query.filter_by(_id=_id).first()
 	address = target_user.address
@@ -174,27 +204,28 @@ def api_licence_list(_id):
 	asset_list = db.session.query(Asset_nft) \
 		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
 		.join(Launch_to_nft, Asset_nft.NftId == Launch_to_nft.tokenId) \
-		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.transactionHash,
-					 Asset_nft.img) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.subject, Asset_detail.description, Asset_detail.transactionHash,
+					 Asset_nft.source) \
 		.all()
-	print(asset_list)
+	# print(asset_list)
 	asset_list = [sublist[1:] for sublist in asset_list]
 
 	for asset in asset_list:
 		list(asset)
-		print(f'{asset}')
+		# print(f'{asset}')
 	asset_dict = {}
 	for asset in asset_list:
-		asset_dict[asset[0]] = asset[1], asset[3], asset[4]
-	print(f'Asset Dict{asset_dict}')
+		asset_dict[asset[0]] = asset[1], asset[3], asset[4], asset[5]
+	# print(f'Asset Dict{asset_dict}')
 	# 遍歷每個 list，進行替換
 	for license_detail in license_detail_list:
 		title = asset_dict[license_detail[0]][0]
-		license_detail.append(asset_dict[license_detail[0]][2])
+		license_detail.append(asset_dict[license_detail[0]][1])
+		license_detail.append(asset_dict[license_detail[0]][3])
 		license_detail[0] = title
-		print(f'{license_detail}')
+		# print(f'{license_detail}')
 
-	license_detail_list = [{'title': i[0], 'exp_date': i[1], 'img_url': i[2]} for i in license_detail_list]
+	license_detail_list = [{'title': i[0], 'exp_date': i[1], 'description': i[2], 'img_url': i[3]} for i in license_detail_list]
 
 	# for license_detail in license_detail_list:
 	# 	licence_dict = {'NFT_id': license_detail[0], 'exp_date': license_detail[1], 'title': license_detail[2],
@@ -205,9 +236,36 @@ def api_licence_list(_id):
 	return licence_list_json
 
 
+@mod.route('/api_myNFT_list/<_id>', methods=['GET', 'POST'])
+def api_myNFT_list(_id):
+	# PI api
+	# 給使用者ID，回傳該使用者所上傳的圖片或影片連結
+	target_user = Pi_user.query.filter_by(_id=_id).first()
+	address = target_user.address
+
+	asset_detail = []
+	myNFT_list = []
+	asset_list = db.session.query(Asset_nft) \
+		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.description, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.source) \
+		.filter(Asset_nft.operator.like(address)) \
+		.all()
+	for asset in asset_list:
+		# print(f'{asset}')
+		myNFT_list.append({'title': asset.title, 'description': asset.description, 'img_url': asset.source})
+		# myNFT_list.append(asset_detail)
+		# asset_detail=[]
+
+	print(f'{myNFT_list}')
+	myNFT_list_json = json.dumps(myNFT_list)
+
+	return myNFT_list_json
+
+
 @mod.route('/api_inEXP/<_id>', methods=['GET', 'POST'])
 def api_inEXP(_id):
-	# 檢查使用者ID回傳租期內的檔案連結
+	# PI api
+	# 取得使用者ID回傳租期內的檔案連結
 	target_user = Pi_user.query.filter_by(_id=_id).first()
 	address = target_user.address
 
@@ -239,8 +297,19 @@ def api_inEXP(_id):
 	for i in inEXP_list:
 		urls = Asset_nft.query.filter_by(NftId=i).first()
 		key = i
-		value = urls.img
+		value = urls.source
 		inEXP_url_dict[key] = value
+
+	asset_list = db.session.query(Asset_nft) \
+		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.description, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.source) \
+		.filter(Asset_nft.operator.like(address)) \
+		.all()
+	for asset in asset_list:
+		key = asset.NftId
+		value = asset.source
+		inEXP_url_dict[key] = value
+
 	print(f'{inEXP_url_dict}')
 
 	return inEXP_url_dict
@@ -248,6 +317,7 @@ def api_inEXP(_id):
 
 @mod.route('/api_exhEXP/<room_id>', methods=['GET', 'POST'])
 def api_exhEXP(room_id):
+	# PI api
 	# 檢查room_id回傳租期內的檔案連結
 	target_user = Set_room.query.filter_by(room_id=room_id).first()
 	address = target_user.address
@@ -280,8 +350,19 @@ def api_exhEXP(room_id):
 	for i in inEXP_list:
 		urls = Asset_nft.query.filter_by(NftId=i).first()
 		key = i
-		value = urls.img
+		value = urls.source
 		inEXP_url_dict[key] = value
+
+	asset_list = db.session.query(Asset_nft) \
+		.join(Asset_detail, Asset_nft.transactionHash == Asset_detail.transactionHash) \
+		.add_columns(Asset_nft.NftId, Asset_detail.title, Asset_detail.description, Asset_detail.subject, Asset_nft.operator, Asset_nft.transactionHash, Asset_nft.source) \
+		.filter(Asset_nft.operator.like(address)) \
+		.all()
+	for asset in asset_list:
+		key = asset.NftId
+		value = asset.source
+		inEXP_url_dict[key] = value
+
 	print(f'{inEXP_url_dict}')
 
 	return inEXP_url_dict
@@ -289,6 +370,7 @@ def api_exhEXP(room_id):
 
 @mod.route('/api_ticket/<_id>/<room_id>', methods=['GET', 'POST'])
 def api_ticket(_id, room_id):
+	# PI api
 	# 檢查使用者ID是否有展間門票
 	target_user = Pi_user.query.filter_by(_id=_id).first()
 	address = target_user.address

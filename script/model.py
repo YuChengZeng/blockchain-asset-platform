@@ -6,24 +6,6 @@ from sqlalchemy.orm import sessionmaker, relationship
 Base = declarative_base()
 
 
-class Transfer(Base):
-	__tablename__ = 'transfer'
-	id = Column(Integer, primary_key=True)
-	token_from = Column(String(42))
-	token_to = Column(String(42))
-	token_tokenId = Column(Integer)
-	token_transactionHash = Column(String(66))
-	token_blockNumber = Column(Integer)
-
-
-class Token(Base):
-	__tablename__ = 'token'
-	id = Column(Integer, primary_key=True)
-	token_tokenId = Column(Integer)
-	owner = Column(String(42))
-	status = Column(Integer)
-
-
 class Asset_nft(Base):
 	__tablename__ = 'asset_nft'
 	NftId = Column(Integer, primary_key=True)
@@ -32,7 +14,7 @@ class Asset_nft(Base):
 	operator = Column(String(42))
 	transactionHash = Column(String(128))
 	blockNumber = Column(Integer)
-	img = Column(String(128))
+	source = Column(String(128))
 
 
 class Asset_detail(Base):
@@ -42,6 +24,7 @@ class Asset_detail(Base):
 	creator = Column(String(64))
 	description = Column(String)
 	subject = Column(String(64))
+	format = Column(String(10))
 	transactionHash = Column(String(128))
 
 
@@ -93,7 +76,7 @@ class Room_list(Base):
 	coverUrl = Column(String(128))
 	signboardUrl = Column(String(128))
 	title = Column(String(64))
-	introduction = Column(String(256))
+	introduction = Column(String(2048))
 
 
 class Interact(Base):

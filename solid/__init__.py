@@ -17,10 +17,7 @@ from eth_account.messages import encode_defunct
 from sqlalchemy.orm import sessionmaker
 from jinja2 import evalcontextfilter, Markup, escape
 from solid.extension import db
-from solid.views.misc import items_pagebar, last_page
 from solid.views.config import *  # if for PyCharm execution, use script.config
-from solid.models.users import Users
-from solid.models.user import User
 from solid.models.pi_user import Pi_user
 from solid.models.asset_detail import Asset_detail
 from solid.models.asset_nft import Asset_nft
@@ -56,7 +53,7 @@ def load_current_user():
         pass
     elif 'api' in request.path:
         pass
-    elif 'account' not in session:  # 使用者沒有登入的情況, 導回登入頁
+    elif '_id' not in session:  # 使用者沒有登入的情況, 導回登入頁
         # need to login now, redirect to login page
         return redirect(url_for('login'))
 
@@ -161,7 +158,10 @@ def logout():
     session.pop('auth_token', None)
     session.pop('_id', None)
     resp = Response("Cookie deleted!")
+
+    # delete cookie 'session', token
     resp.set_cookie('session', '', expires=0)
+    resp.set_cookie('token', '', expires=0)
 
     flash('You have logged out.')
     return redirect(url_for('login'))
@@ -202,14 +202,12 @@ def _jinja2_filter_datetime(date, fmt=None):
         return date.strftime('%Y-%m-%d %H:%M:%S')
 
 
-from solid.views import object_data
 from solid.views import web3
 from solid.views import asset
 from solid.views import curation
 from solid.views import visitor
 from solid.views import filter
 
-app.register_blueprint(object_data.mod, url_prefix='/object_data')
 app.register_blueprint(web3.mod, url_prefix='/web3')
 app.register_blueprint(asset.mod, url_prefix='/asset')
 app.register_blueprint(curation.mod, url_prefix='/curation')

@@ -33,6 +33,7 @@
                                         </form>
                                     </div>
                                     <div class="card-footer text-center py-3">
+<!--                                        <div class="small"><a class="small" href="chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html#unlock" target="_blank">如何解鎖錢包?</a></div>-->
                                         <div class="small"><a class="small" href="https://metamask.io/" target="_blank">尚未擁有MetaMask錢包?</a></div>
                                     </div>
                                 </div>
@@ -78,7 +79,7 @@
 			$("#address").val(currentAccount);
 		});
 
-        {#切換錢包自動登出#重新整理#}
+        // {#切換錢包自動登出#重新整理#}
         if (window.ethereum.on('accountsChanged', (accounts) => {
             console.log(accounts)
 			// window.location.reload();
@@ -103,7 +104,7 @@
           return false;
         }
         if (address.value === "") {
-          alert("請解鎖錢包");
+          alert("請先解鎖錢包");
           return false;
         }
         else return true;

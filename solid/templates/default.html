@@ -2,115 +2,40 @@
 {% block web3 %}
 <div class="container-fluid px-4">
 	<h1 class="mt-4">首頁</h1>
-    <div class="row">
-        <div class="col-12 col-md-6">熱門商品列表
-            <table id="myTable1" class="display">
-				<thead>
-					<tr>
-						<th>次數</th>
-						<th style="display: none">room_id</th>
-						<th>title</th>
-						<th>introduction</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tfoot>
-					<tr>
-						<th>次數</th>
-						<th style="display: none">room_id</th>
-						<th>title</th>
-						<th>introduction</th>
-						<th></th>
-					</tr>
-				</tfoot>
-				<tbody>
-					{% for ticket in ticket_rank %}
-					<tr>
-						<td>{{ ticket[3] }}</td>
-						<td style="display: none">{{ ticket[0] }}</td>
-						<td>{{ ticket[1] }}</td>
-						<td>{{ ticket[2] }}</td>
-						<td>
-							<form action="{{ url_for('web3.add_to_collect') }}" method="post">
-								<input type="hidden" id="collect_type1" name="collect_type" value="r">
-								<input type="hidden" id="collect_Id1" name="collect_Id" value="{{ ticket[0] }}">
-								<button class="btn btn-outline-primary" type="submit">收藏</button>
-							</form>
-						</td>
-					</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-        </div>
-        <div class="col-12 col-md-6">熱門展間列表
-            <table id="myTable2" class="display">
-				<thead>
-					<tr>
-						<th>次數</th>
-						<th style="display: none">tokenId</th>
-						<th>title</th>
-						<th>creator</th>
-						<th>description</th>
-						<th>subject</th>
-						<th style="display: none">transactionHash</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tfoot>
-					<tr>
-						<th>次數</th>
-						<th style="display: none">tokenId</th>
-						<th>title</th>
-						<th>creator</th>
-						<th>description</th>
-						<th>subject</th>
-						<th style="display: none">transactionHash</th>
-						<th></th>
-					</tr>
-				</tfoot>
-				<tbody>
-					{% for commodities in commodities_rank %}
-					<tr>
-						<td>{{ commodities[6] }}</td>
-						<td style="display: none">{{ commodities[0] }}</td>
-						<td>{{ commodities[1] }}</td>
-						<td>{{ commodities[2] }}</td>
-						<td>{{ commodities[3] }}</td>
-						<td>{{ commodities[4] }}</td>
-						<td style="display: none">{{ commodities[5] }}</td>
-						<td>
-							<form action="{{ url_for('web3.add_to_collect') }}" method="post">
-								<input type="hidden" id="collect_type2" name="collect_type" value="c">
-								<input type="hidden" id="collect_Id2" name="collect_Id" value="{{ commodities[0] }}">
-								<button class="btn btn-outline-primary" type="submit">收藏</button>
-							</form>
-						</td>
-					</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-        </div>
-		<div style="display: none" class="col-xl-3 col-md-6">
-            <div class="card bg-secondary text-white mb-4">
-				<button type="button" class="btn-secondary btn-lg" onclick="getStart()">領錢(僅限一次)</button>
-			</div>
-        </div>
-    </div>
+	<div class="card-header">
+		系統說明
+	</div>
+	<div class="card-body">
+		<p>歡迎使用元宇宙數位策展平台，請先閱讀系統說明。</p>
+		<p>本平台透過使用區塊鏈技術，將您的數位資產鑄造成NFT，以確保您的資產擁有權。</p>
+		<p>並在此基礎上提供您出租您的NFT資產使用權給其他使用者用以佈置數位展間，並以此做為您的點數收入來源。</p>
+		<p>另外也提供您使用Party Island 3D數位展間進行數位策展，您可以使用展間內原有的3D物件進行展間佈置，也可自行上傳您需要的3D模型。</p>
+		<p>您可以使用自行上傳的NFT圖片和影片或使用租借功能取得商品的使用授權，再到展間內將展品在展間中進行展示。</p>
+		<p>您也可以針對您的展間進行門票的設定，以此創造點數收入。</p>
+		<p>最後還包括觀展功能，需透過購買門票進入展間進行觀展，在觀展時您可以對各項展品圖片進行回饋(喜歡或不喜歡)，並取得互動的點數回饋。
+			<br>展間內的圖片的互動回饋按鈕會在您按完喜歡或不喜歡之後打開畫面中消失，且只能進行一次回饋並領取點數。</p>
+		<p>本系統包含三大模組和個人資料：資產管理模組、策展管理模組、觀展模組</p>
+		<p>各模組功能分別為：</p>
+			<ul>
+				<li>資產管理模組：鑄造NFT及上傳數位資產、NFT編輯及上架、商品下架</li>
+				<li>策展管理模組：商品列表、展間門票、展間編輯、已取得授權</li>
+				<li>觀展模組：展間列表</li>
+			</ul>
+		<p>個人資料：「策展點數(CT)」餘額檢視、收入支出統計和分析</p>
+		<br>
+		<p>本平台透過使用「策展點數(CT)」作為交易的媒介</p>
+		<p>在您閱讀完系統說明後可領取10000CT作為啟動基金以開始您的平台操作</p>
+	</div>
+	<div class="col-xl-3 col-md-6">
+		<div class="card bg-secondary text-white mb-4">
+			<button type="button" class="btn-secondary" onclick="getStart()">領取點數(僅限一次)</button>
+		</div>
+	</div>
 </div>
 <script>
-	let table1 = new DataTable('#myTable1', {
-        order: [[0, 'desc']]
-	});
-    let table2 = new DataTable('#myTable2', {
-        order: [[0, 'desc']]
-	});
 	{% autoescape false %}
 	var CurationTokenInterface = {{ CT_abi }};
     {% endautoescape %}
-	function changeIframeSrc() {
-		var iframe = document.getElementById("myIframe");
-		iframe.src = "https://dev-partyisland.dlll.nccu.edu.tw/vendor";
-	}
 
 	function getStart() {
 		var targetContract = new web3.eth.Contract(

@@ -10,4 +10,4 @@ class Asset_nft(db.Model):
 	operator = db.Column(db.String(42))
 	transactionHash = db.Column(db.String(128))
 	blockNumber = db.Column(db.Integer)
-	img = db.Column(db.String(128))
+	source = db.Column(db.String(128))

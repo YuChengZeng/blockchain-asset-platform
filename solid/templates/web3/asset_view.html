@@ -49,6 +49,8 @@
 								<option value="新聞">新聞</option>
 								<option value="歷史">歷史</option>
 								<option value="人物">人物</option>
+								<option value="其他">文字說明</option>
+								<option value="其他">其他</option>
 							</select>
 							<label for="subject">主題</label>
 						</div>
@@ -57,7 +59,7 @@
 					  placeholder="請輸入資產相關描述">{{ target[3] }}</textarea>
 							<label for="description">資產相關描述</label>
 						</div>
-						<button type="submit" id="buttonMint" class="btn btn-primary" onclick="">
+						<button type="submit" id="buttonMint" class="btn btn-primary" onclick="updateInformation()">
 							更新資訊
 						</button>
 					</div>
@@ -80,7 +82,19 @@
     {% autoescape false %}
     // var NftInterface = {{ abi }};
     {% endautoescape %}
+	function updateInformation() {
+		// 取得欄位的值
+		var title = document.getElementById('title').value;
+		var creator = document.getElementById('creator').value;
+		var subject = document.getElementById('subject').value;
+		var description = document.getElementById('description').value;
 
+		// 更新欄位上顯示的值
+		document.getElementById('title').placeholder = title;
+		document.getElementById('creator').placeholder = creator;
+		document.getElementById('subject').value = subject;
+		document.getElementById('description').placeholder = description;
+	}
 
     String.prototype.hexEncode = function () {
         var hex, i;

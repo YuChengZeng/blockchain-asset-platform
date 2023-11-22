@@ -36,18 +36,25 @@
 					<table id="room-table" class="table-secondary dataTable-table">
 						<thead>
 							<tr>
-								<th>展間標題</th>
-								<th style="display: none">ID</th>
+								<th>展間標題</th>								
 								<th>Prise</th>
+								<th style="width: 200px">Room Link</th>
 								<th style="width: 75px">Set</th>
 							</tr>
 						</thead>
 						<tbody>
 							{% for room in rooms %}
 							<tr>
-								<td>{{ room.title }}</td>
-								<td style="display: none">{{ room._id }}</td>
+								<td>{{ room.title }}</td>								
 								<td>{{ room.price if room.price else "未設定" }}</td>
+								<td>
+								    <button class="btn btn-outline-success choose-btn" onclick="window.open('https://dev-partyisland.dlll.nccu.edu.tw/exhibition?id={{ room._id }}&room=1', '_blank')">
+								        展間連結
+								    </button>
+								    <button class="btn btn-outline-success copy-btn" data-link="https://dev-partyisland.dlll.nccu.edu.tw/exhibition?id={{ room._id }}&room=1">
+				                        複製連結
+				                    </button>
+								</td>
 								<td><button class="btn btn-primary choose-btn">選擇</button></td>
 							</tr>
 							{% endfor %}
@@ -81,7 +88,7 @@
 							<div class="col-md-6 d-flex justify-content-end my-3">
 							</div>
 							<div class="col-md-6 d-flex justify-content-end my-3">
-								<button class="btn btn-primary" type="button" onclick="checkForm()">上架</button>
+								<button id="submitButton" class="btn btn-primary" type="button" onclick="checkForm()">設定門票</button>
 							</div>
 						</div>
 					</form>
@@ -95,6 +102,9 @@
 	var TicketsInterface = {{ TT_abi }};
 	var CurationTokenInterface = {{ CT_abi }};
     {% endautoescape %}
+	var globalReceipt = '';
+	var globalTransactionHash = '';
+    var intervalId = '';
 
 	function checkForm() {
 		// 取得表單中所有的input元素
@@ -133,18 +143,72 @@
             TicketsInterface,
             '{{ address_TT }}',
             {from: currentAccount, gas: 210000});
-        var request = targetContract.methods.setRoom(roomId);
-        request.send(function (err, transactionHash) {
-            console.log("transfer callback");
-            console.log(err);
-            console.log(transactionHash);
+
+        var request0 = targetContract.methods.setRoom(roomId);
+        request0.send(function (err, transactionHash) {
+            if (err) {
+				console.log(err);
+			} else {
+				console.log("Transaction hash:", transactionHash);
+			}
         }).then();
         var request = targetContract.methods.setPrice(roomId, price);
         request.send(function (err, transactionHash) {
-            console.log("transfer callback");
-            console.log(err);
-            console.log(transactionHash);
-        }).then();
+			if (err) {
+				console.log(err);
+			} else {
+				console.log("Transaction hash:", transactionHash);
+				web3.eth.getTransactionReceipt(transactionHash).then(function(receipt) {
+                    globalReceipt = receipt;
+                    globalTransactionHash = transactionHash;
+				});
+                var button = document.getElementById("submitButton");
+                if (!globalReceipt) {
+                    button.innerText = "更新票價中...";
+                    button.classList.remove("btn-primary");
+                    button.classList.add("btn-info");
+                    button.disabled = true;
+                }
+                intervalId = setInterval(checkTransactionStatus, 5000);
+			}
+		}).then();
+    }
+
+    function checkTransactionStatus() {
+        web3.eth.getTransactionReceipt(globalTransactionHash).then(function(receipt) {
+			console.log("Transaction receipt:", receipt);
+			globalReceipt = receipt;
+		});
+		if (globalReceipt) {
+			// 更新按鈕狀態
+			var button = document.getElementById('submitButton');
+			button.innerText = '設定票價';
+			button.classList.remove("btn-info");
+			button.classList.add("btn-primary");
+            button.disabled = false;
+            alert("票價設定完成，請重新整理頁面");
+			// 停止檢查
+			clearInterval(intervalId);
+		}
+	}
+
+	const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const link = button.getAttribute('data-link');
+            copyToClipboard(link);
+        });
+    });
+
+    function copyToClipboard(text) {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        alert('連結已複製到剪貼簿！');
     }
 </script>
 {% endblock %}

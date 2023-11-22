@@ -35,7 +35,6 @@
 <!--							<option value="dayDESC">天數-高到低</option>-->
 <!--						</select>-->
 					<select class="dataTable-selector" id="s_key" name="s_key" aria-controls="data-table-2" >
-						<option value="">搜尋：</option>
 						<option value="title">標題</option>
 <!--						<option value="creator">創建者</option>-->
 						<option value="subject">主題</option>
@@ -61,7 +60,7 @@
 					<div class="card-footer d-flex align-items-center justify-content-evenly">
 						<div id="days" >{{ launch_detail[1] }}天</div>
 						<div id="price" >{{ launch_detail[2] }} CT</div>
-						<button class="btn btn-primary" onclick="launchStatus({{ launch_detail[5] }})"><i
+						<button id="launch_id{{ launch_detail[5] }}" class="btn btn-primary" onclick="launchStatus({{ launch_detail[5] }})"><i
 								class="">下架</i>
 						</button>
 					</div>
@@ -77,6 +76,11 @@
 	{% autoescape false %}
 	var AssetRentalInterface = {{ ART_abi }};
     {% endautoescape %}
+	var globalReceipt = '';
+	var globalTransactionHash = '';
+    var intervalId = '';
+
+    var launchStatusButtons = {}; // 存儲每個按鈕的狀態
 
     function launchStatus(launch_id) {
         var targetContract = new web3.eth.Contract(
@@ -85,12 +89,55 @@
             {from: currentAccount, gas: 210000});
 
         var request = targetContract.methods.launchStatus(launch_id, false);
-
         request.send(function (err, transactionHash) {
-            console.log("transfer callback");
-            console.log(err);
-            console.log(transactionHash);
+            if (err) {
+				console.log(err);
+			} else {
+				console.log("Transaction hash:", transactionHash);
+                var button = document.getElementById("launch_id"+launch_id);
+                if (!globalReceipt) {
+                    button.innerText = "下架中...";
+                    button.classList.remove("btn-primary");
+                    button.classList.add("btn-info");
+                    globalTransactionHash = transactionHash;
+					intervalId = setInterval(function() {
+                        checkTransactionStatus(launch_id);
+					}, 5000);
+                    launchStatusButtons[launch_id] = {
+						button: button,
+						transactionHash: transactionHash,
+						receipt: '',
+						intervalId: intervalId
+					};
+                    button.disabled = true;
+
+                }
+			}
         }).then();
     }
+
+	function checkTransactionStatus(launch_id) {
+        console.log(launch_id)
+        var launchButton = launchStatusButtons[launch_id];
+        if (launchButton) {
+            var transactionHash = launchButton.transactionHash;
+            if (transactionHash) {
+                web3.eth.getTransactionReceipt(globalTransactionHash).then(function (receipt) {
+                    console.log("Transaction receipt:", receipt);
+                    launchButton.receipt = receipt;
+                });
+            }
+            if (launchButton.receipt) {
+                // 下架完成通知
+                var button = launchButton.button;
+                button.innerText = '已下架';
+                button.classList.remove("btn-info");
+                button.classList.add("btn-secondary");
+                button.disabled = true;
+                // 停止檢查
+                clearInterval(launchButton.intervalId);
+            }
+        }
+	}
 </script>
 	{% endblock %}
